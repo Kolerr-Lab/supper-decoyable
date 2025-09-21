@@ -9,7 +9,14 @@ from typing import Any, Dict
 
 import httpx
 
-from ..base import LLMProvider, ProviderAPIError, ProviderAuthError, ProviderConfig, ProviderRateLimitError, ProviderTimeoutError
+from ..base import (
+    LLMProvider,
+    ProviderAPIError,
+    ProviderAuthError,
+    ProviderConfig,
+    ProviderRateLimitError,
+    ProviderTimeoutError,
+)
 
 
 class GoogleProvider(LLMProvider):
@@ -26,8 +33,12 @@ class GoogleProvider(LLMProvider):
 
         try:
             async with httpx.AsyncClient(timeout=self.config.timeout) as client:
+                url = (
+                    f"https://generativelanguage.googleapis.com/v1beta/models/"
+                    f"{self.config.model}:generateContent?key={self.config.api_key}"
+                )
                 response = await client.post(
-                    f"https://generativelanguage.googleapis.com/v1beta/models/{self.config.model}:generateContent?key={self.config.api_key}",
+                    url,
                     headers={"Content-Type": "application/json"},
                     json={
                         "contents": [{"parts": [{"text": prompt}]}],
@@ -50,10 +61,10 @@ class GoogleProvider(LLMProvider):
                 else:
                     raise ProviderAPIError(f"Google API error {response.status_code}: {response.text}")
 
-        except httpx.TimeoutException:
-            raise ProviderTimeoutError("Google request timed out")
+        except httpx.TimeoutException as e:
+            raise ProviderTimeoutError("Google request timed out") from e
         except Exception as e:
-            raise ProviderAPIError(f"Google request failed: {str(e)}")
+            raise ProviderAPIError(f"Google request failed: {str(e)}") from e
 
     async def check_health(self) -> bool:
         """Check Google API health."""

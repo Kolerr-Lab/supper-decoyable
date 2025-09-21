@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class ProviderStatus(Enum):
     """Status of an LLM provider."""
+
     HEALTHY = "healthy"
     DEGRADED = "degraded"
     UNHEALTHY = "unhealthy"
@@ -24,32 +25,38 @@ class ProviderStatus(Enum):
 
 class LLMProviderError(Exception):
     """Base exception for LLM provider errors."""
+
     pass
 
 
 class ProviderRateLimitError(LLMProviderError):
     """Raised when provider rate limit is exceeded."""
+
     pass
 
 
 class ProviderTimeoutError(LLMProviderError):
     """Raised when provider request times out."""
+
     pass
 
 
 class ProviderAuthError(LLMProviderError):
     """Raised when provider authentication fails."""
+
     pass
 
 
 class ProviderAPIError(LLMProviderError):
     """Raised when provider API returns an error."""
+
     pass
 
 
 @dataclass
 class ProviderConfig:
     """Configuration for an LLM provider."""
+
     name: str
     api_key: Optional[str] = None
     base_url: Optional[str] = None
@@ -65,6 +72,7 @@ class ProviderConfig:
 @dataclass
 class ProviderMetrics:
     """Metrics for provider performance tracking."""
+
     total_requests: int = 0
     successful_requests: int = 0
     failed_requests: int = 0

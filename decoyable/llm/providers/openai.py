@@ -9,7 +9,14 @@ from typing import Any, Dict
 
 import httpx
 
-from ..base import LLMProvider, ProviderAPIError, ProviderAuthError, ProviderConfig, ProviderRateLimitError, ProviderTimeoutError
+from ..base import (
+    LLMProvider,
+    ProviderAPIError,
+    ProviderAuthError,
+    ProviderConfig,
+    ProviderRateLimitError,
+    ProviderTimeoutError,
+)
 
 
 class OpenAIProvider(LLMProvider):
@@ -52,10 +59,10 @@ class OpenAIProvider(LLMProvider):
                 else:
                     raise ProviderAPIError(f"OpenAI API error {response.status_code}: {response.text}")
 
-        except httpx.TimeoutException:
-            raise ProviderTimeoutError("OpenAI request timed out")
+        except httpx.TimeoutException as e:
+            raise ProviderTimeoutError("OpenAI request timed out") from e
         except Exception as e:
-            raise ProviderAPIError(f"OpenAI request failed: {str(e)}")
+            raise ProviderAPIError(f"OpenAI request failed: {str(e)}") from e
 
     async def check_health(self) -> bool:
         """Check OpenAI API health."""

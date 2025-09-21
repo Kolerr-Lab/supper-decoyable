@@ -11,8 +11,9 @@ import random
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from .base import LLMProvider, ProviderConfig, ProviderStatus
 from . import factory as provider_factory
+from .base import LLMProvider, ProviderConfig, ProviderStatus
+
 create_provider = provider_factory.create_provider
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,9 @@ class PriorityRouting(RoutingStrategy):
             return None
 
         # Sort by priority (ascending) then by performance metrics
-        healthy_providers.sort(key=lambda p: (p.config.priority, p.metrics.total_latency / max(p.metrics.total_requests, 1)))
+        healthy_providers.sort(
+            key=lambda p: (p.config.priority, p.metrics.total_latency / max(p.metrics.total_requests, 1))
+        )
         return healthy_providers[0]
 
 
@@ -90,13 +93,15 @@ class FailoverRouting(RoutingStrategy):
 class LLMRouter:
     """Smart LLM routing engine with failover and load balancing."""
 
-    def __init__(self,
-                 provider_configs: List[ProviderConfig],
-                 routing_strategy: RoutingStrategy = None,
-                 max_retries: int = 3,
-                 retry_delay: float = 1.0,
-                 health_check_interval: int = 60,
-                 start_health_checks: bool = True):
+    def __init__(
+        self,
+        provider_configs: List[ProviderConfig],
+        routing_strategy: RoutingStrategy = None,
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
+        health_check_interval: int = 60,
+        start_health_checks: bool = True,
+    ):
         """
         Initialize the LLM router.
 
@@ -179,14 +184,13 @@ class LLMRouter:
                     "enabled": provider.config.enabled,
                     "priority": provider.config.priority,
                     "model": provider.config.model,
-                }
+                },
             }
         return status
 
-    async def _generate_with_specific_provider(self,
-                                             prompt: str,
-                                             provider_name: str,
-                                             **kwargs) -> Tuple[Dict[str, Any], str]:
+    async def _generate_with_specific_provider(
+        self, prompt: str, provider_name: str, **kwargs
+    ) -> Tuple[Dict[str, Any], str]:
         """Generate completion using a specific provider."""
         provider = self.providers[provider_name]
         if not provider.is_healthy() or not provider.should_attempt_request():
@@ -199,9 +203,7 @@ class LLMRouter:
             logger.error(f"Specific provider {provider_name} failed: {e}")
             raise
 
-    async def _generate_with_routing(self,
-                                   prompt: str,
-                                   **kwargs) -> Tuple[Dict[str, Any], str]:
+    async def _generate_with_routing(self, prompt: str, **kwargs) -> Tuple[Dict[str, Any], str]:
         """Generate completion using routing strategy with retries."""
         for attempt in range(self.max_retries):
             provider = self.routing_strategy.select_provider(list(self.providers.values()))
@@ -209,7 +211,7 @@ class LLMRouter:
             if not provider:
                 if attempt == self.max_retries - 1:
                     raise RuntimeError("No healthy LLM providers available")
-                await asyncio.sleep(self.retry_delay * (2 ** attempt))  # Exponential backoff
+                await asyncio.sleep(self.retry_delay * (2**attempt))  # Exponential backoff
                 continue
 
             try:
@@ -222,14 +224,13 @@ class LLMRouter:
                 provider.record_failure(e)
 
                 if attempt < self.max_retries - 1:
-                    await asyncio.sleep(self.retry_delay * (2 ** attempt))  # Exponential backoff
+                    await asyncio.sleep(self.retry_delay * (2**attempt))  # Exponential backoff
 
         raise RuntimeError(f"All LLM providers failed after {self.max_retries} attempts")
 
-    async def generate_completion(self,
-                                prompt: str,
-                                provider_name: Optional[str] = None,
-                                **kwargs) -> Tuple[Dict[str, Any], str]:
+    async def generate_completion(
+        self, prompt: str, provider_name: Optional[str] = None, **kwargs
+    ) -> Tuple[Dict[str, Any], str]:
         """
         Generate completion using smart routing.
 
@@ -271,12 +272,9 @@ def create_default_router() -> LLMRouter:
 
     configs = []
     if os.getenv("OPENAI_API_KEY"):
-        configs.append(ProviderConfig(
-            name="openai",
-            api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-3.5-turbo",
-            priority=1
-        ))
+        configs.append(
+            ProviderConfig(name="openai", api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo", priority=1)
+        )
 
     if not configs:
         raise ValueError("No LLM API keys configured")
@@ -292,30 +290,23 @@ def create_multi_provider_router() -> LLMRouter:
 
     # OpenAI
     if os.getenv("OPENAI_API_KEY"):
-        configs.append(ProviderConfig(
-            name="openai",
-            api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-3.5-turbo",
-            priority=1
-        ))
+        configs.append(
+            ProviderConfig(name="openai", api_key=os.getenv("OPENAI_API_KEY"), model="gpt-3.5-turbo", priority=1)
+        )
 
     # Anthropic
     if os.getenv("ANTHROPIC_API_KEY"):
-        configs.append(ProviderConfig(
-            name="anthropic",
-            api_key=os.getenv("ANTHROPIC_API_KEY"),
-            model="claude-3-haiku-20240307",
-            priority=2
-        ))
+        configs.append(
+            ProviderConfig(
+                name="anthropic", api_key=os.getenv("ANTHROPIC_API_KEY"), model="claude-3-haiku-20240307", priority=2
+            )
+        )
 
     # Google
     if os.getenv("GOOGLE_API_KEY"):
-        configs.append(ProviderConfig(
-            name="google",
-            api_key=os.getenv("GOOGLE_API_KEY"),
-            model="gemini-pro",
-            priority=3
-        ))
+        configs.append(
+            ProviderConfig(name="google", api_key=os.getenv("GOOGLE_API_KEY"), model="gemini-pro", priority=3)
+        )
 
     if not configs:
         raise ValueError("No LLM API keys configured")

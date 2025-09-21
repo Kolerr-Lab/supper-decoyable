@@ -4,7 +4,6 @@ decoyable/defense/analysis.py
 Main analysis logic and API endpoints for DECOYABLE defense system.
 """
 
-import json
 import logging
 import os
 import re
@@ -148,14 +147,10 @@ async def get_llm_status() -> Dict[str, Any]:
         return {
             "router_status": "active",
             "providers": status,
-            "routing_strategy": router.routing_strategy.__class__.__name__
+            "routing_strategy": router.routing_strategy.__class__.__name__,
         }
     except RuntimeError as e:
-        return {
-            "router_status": "inactive",
-            "error": str(e),
-            "providers": {}
-        }
+        return {"router_status": "inactive", "error": str(e), "providers": {}}
     except Exception as exc:
         logger.error(f"Failed to get LLM status: {exc}")
         return {"error": str(exc)}

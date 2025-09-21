@@ -14,17 +14,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from decoyable.defense.adaptive_defense import AdaptiveDefense
-from decoyable.defense.analysis import (
-    analyze_attack_async,
-    apply_adaptive_defense,
-)
+from decoyable.defense.analysis import analyze_attack_async, apply_adaptive_defense
 from decoyable.defense.knowledge_base import KnowledgeBase
-from decoyable.defense.llm_analysis import (
-    analyze_attack_patterns,
-    analyze_attack_with_llm,
-    get_llm_router,
-)
-from decoyable.llm import ProviderConfig, LLMRouter, OpenAIProvider
+from decoyable.defense.llm_analysis import analyze_attack_patterns, analyze_attack_with_llm, get_llm_router
+from decoyable.llm import LLMRouter, OpenAIProvider, ProviderConfig
 
 
 class TestKnowledgeBase:
@@ -560,6 +553,7 @@ class TestLLMRouting:
 
         # Clear any existing router
         import decoyable.defense.llm_analysis
+
         decoyable.defense.llm_analysis._llm_router = None
 
         router = get_llm_router()
@@ -574,12 +568,14 @@ class TestLLMStatusEndpoint:
     def setup_method(self):
         """Set up test client."""
         from decoyable.api.app import app
+
         self.client = TestClient(app)
 
     def test_llm_status_endpoint(self):
         """Test LLM status API endpoint."""
         # Test with no router initialized
         import decoyable.defense.llm_analysis
+
         decoyable.defense.llm_analysis._llm_router = None
 
         response = self.client.get("/analysis/llm-status")

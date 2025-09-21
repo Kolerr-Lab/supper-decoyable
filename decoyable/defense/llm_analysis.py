@@ -11,7 +11,6 @@ from typing import Any, Dict, Optional
 from decoyable.llm import LLMRouter, create_default_router, create_multi_provider_router
 
 from .adaptive_defense import adaptive_defense
-from .patterns import ATTACK_PATTERNS
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +31,9 @@ def get_llm_router() -> LLMRouter:
             try:
                 _llm_router = create_default_router()
                 logger.info("Initialized LLM router with default OpenAI provider")
-            except ValueError:
+            except ValueError as e:
                 logger.warning("No LLM providers configured, LLM analysis will be unavailable")
-                raise RuntimeError("No LLM providers available")
+                raise RuntimeError("No LLM providers available") from e
 
     return _llm_router
 
@@ -79,11 +78,7 @@ Classify the attack type and provide:
 JSON Response:
 """
 
-        response, provider_used = await router.generate_completion(
-            prompt,
-            max_tokens=500,
-            temperature=0.1
-        )
+        response, provider_used = await router.generate_completion(prompt, max_tokens=500, temperature=0.1)
 
         logger.debug(f"LLM analysis completed using provider: {provider_used}")
 
