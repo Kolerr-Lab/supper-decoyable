@@ -1,0 +1,147 @@
+DECOYABLE - Command Cheat Sheet
+Location: /g:/TECH/DECOYABLE/command.txt
+Purpose: quick reference of common commands used across the project. Replace placeholders as needed.
+
+-- Setup --
+# clone repository
+git clone https://example.com/your-org/decoyable.git
+cd decoyable
+
+# create virtual env (Python)
+python -m venv .venv
+# activate (PowerShell)
+.venv\Scripts\Activate.ps1
+# activate (bash)
+source .venv/bin/activate
+
+# install Node deps
+npm ci
+# or
+yarn install
+
+-- Build --
+# Node
+npm run build
+
+# Python (if build step exists)
+python -m build
+
+# Dotnet
+dotnet build
+
+# Maven
+mvn -DskipTests package
+
+-- Test --
+# Node
+npm test
+# run specific
+npm test -- --testPathPattern=tests/someTest
+
+# Python
+pytest -q
+# run single file
+pytest tests/test_module.py::test_case
+
+# dotnet
+dotnet test
+
+-- Lint & Format --
+# JavaScript
+npm run lint
+npm run format
+
+# Python
+black .
+flake8 .
+
+# dotnet
+dotnet format
+
+-- Run / Dev --
+# Node dev server
+npm start
+npm run dev
+
+# Python app
+python -m src.app
+-- Run FastAPI --
+# Start FastAPI app with Uvicorn
+uvicorn decoyable.api.app:app --reload --host 0.0.0.0 --port 8002
+
+# Run DECOYABLE CLI
+# Scan for secrets
+python main.py scan secrets
+
+# Scan for dependencies
+python main.py scan deps
+
+# Run both scans
+python main.py scan all
+
+# API server with Docker
+docker-compose up -d
+
+# Test API endpoints
+curl -X POST http://localhost:8000/scan/secrets -H "Content-Type: application/json" -d '{"path": "."}'
+
+# dotnet
+dotnet run --project src/ProjectName
+
+# watch mode (rebuild on change)
+npm run watch
+dotnet watch run
+
+-- Docker --
+# build
+docker build -t decoyable:local .
+# run
+docker run --rm -p 8080:80 -e ENV=dev decoyable:local
+# interactive shell
+docker run --rm -it decoyable:local /bin/bash
+
+-- Git workflow --
+# create branch
+git checkout -b feat/short-description
+# stage & commit
+git add .
+git commit -m "Short: describe changes"
+# rebase latest main
+git fetch origin
+git rebase origin/main
+# push branch
+git push -u origin HEAD
+
+# create signed annotated tag for release
+git tag -s vX.Y.Z -m "Release vX.Y.Z"
+git push origin --tags
+
+-- CI / Local test of CI files --
+# use act to run GitHub Actions locally (if installed)
+act -j workflow_job_name
+
+-- Debug & Logs --
+# tail logs (Linux / WSL / Git Bash)
+tail -f logs/*.log
+# Windows PowerShell equivalent
+Get-Content logs\app.log -Wait
+
+# find process using port 8080 (Windows)
+netstat -ano | findstr :8080
+# kill by PID (PowerShell)
+Stop-Process -Id <PID> -Force
+
+-- Cleanup & Reset --
+# remove node modules and reinstall
+rm -rf node_modules package-lock.json && npm ci
+
+# reset local changes
+git reset --hard HEAD
+git clean -fd
+
+-- Notes / TODO --
+- Replace example URLs, project names and ports with actual values.
+- Add project-specific commands (migration, seed, admin tasks) under relevant sections.
+- Keep this file updated when adding new developer scripts (package.json scripts, Makefile targets).
+
+End of cheat sheet.

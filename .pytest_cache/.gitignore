@@ -1,0 +1,4 @@
+# Ignore pytest cache files - keep this .gitignore so the folder exists in the repo but its contents aren't committed.
+# See: https://docs.pytest.org/en/stable/cache.html
+*
+!.gitignore

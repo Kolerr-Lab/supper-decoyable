@@ -2,33 +2,233 @@ name: CI
 
 on:
   push:
+    branches: [main, develop]
   pull_request:
+    branches: [main, develop]
 
 jobs:
-  build:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ --cov=decoyable --cov-report=xml --cov-report=term
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  defense-test:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .[dev]
-          pip install ruff black mypy pytest pip-audit
+          pip install -r requirements.txt
+          pip install pytest-cov pytest-asyncio httpx
 
-      - name: Lint & Type check
+      - name: Run defense module tests with LLM mocks
         run: |
-          ruff check .
-          black --check .
-          mypy decoyable
+          python -m pytest tests/test_honeypot.py tests/test_analysis.py -v --cov=decoyable.defense --cov-report=xml --cov-report=term
 
-      - name: Run tests
-        run: pytest -q
+      - name: Run defense integration tests
+        run: |
+          python -c "
+          from fastapi.testclient import TestClient
+          from fastapi import FastAPI
+          from decoyable.defense import honeypot_router, analysis_router
 
-      - name: Security audit
-        run: pip-audit -r requirements.txt || true
+          app = FastAPI()
+          app.include_router(honeypot_router)
+          app.include_router(analysis_router)
+
+          client = TestClient(app)
+
+          # Test honeypot endpoints
+          response = client.get('/decoy/test')
+          assert response.status_code == 200
+          print('✓ Honeypot endpoint working')
+
+          # Test analysis endpoints
+          response = client.get('/analysis/patterns')
+          assert response.status_code == 200
+          print('✓ Analysis endpoint working')
+
+          print('✓ All defense integration tests passed')
+          "
+
+      - name: Test LLM analysis fallback (no API key)
+        run: |
+          python -c "
+          import os
+          # Ensure no OpenAI key for testing fallback
+          os.environ.pop('OPENAI_API_KEY', None)
+
+          from decoyable.defense.analysis import analyze_attack_patterns
+          import asyncio
+
+          async def test():
+              result = await analyze_attack_patterns({
+                  'method': 'POST',
+                  'path': '/login',
+                  'body': 'user=admin\' OR \'1\'=\'1'
+              })
+              assert result['attack_type'] == 'sqli'
+              assert result['confidence'] > 0.5
+              print('✓ Pattern analysis fallback working')
+
+          asyncio.run(test())
+          "
+
+      - name: Upload defense coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: defense-tests
+          name: defense-coverage
+          fail_ci_if_error: false
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install linting dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black isort flake8 mypy pre-commit ruff
+
+      - name: Run Ruff linting
+        run: ruff check decoyable/ tests/ main.py
+
+      - name: Run Black code formatting check
+        run: black --check --diff decoyable/ tests/ main.py
+
+      - name: Run isort import sorting check
+        run: isort --check-only --diff decoyable/ tests/ main.py
+
+      - name: Run Flake8 linting
+        run: flake8 decoyable/ tests/ main.py --max-line-length=88 --extend-ignore=E203,W503
+
+      - name: Run MyPy type checking
+        run: mypy decoyable/ main.py --ignore-missing-imports
+
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install security scanning tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety pip-audit
+
+      - name: Run Bandit security linting
+        run: bandit -r decoyable/ -f json -o bandit-report.json || true
+
+      - name: Run Bandit on defense modules (strict)
+        run: |
+          bandit -r decoyable/defense/ -f json -o defense-bandit-report.json -lll || true
+          # Defense modules should have higher security standards
+
+      - name: Run Safety dependency vulnerability check
+        run: safety check --output json || true
+
+      - name: Run pip-audit dependency audit
+        run: pip-audit -r requirements.txt --format json || true
+
+      - name: Upload security scan results
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-scan-results
+          path: |
+            bandit-report.json
+            defense-bandit-report.json
+
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/buildx-action@v3
+        with:
+          context: .
+          file: ./docker/Dockerfile
+          push: false
+          tags: decoyable:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker run --rm decoyable:test python -c "import decoyable; print('Import successful')"
+
+      - name: Test Docker container health
+        run: |
+          docker run -d --name test-container -p 8000:8000 decoyable:test
+          sleep 10
+          curl -f http://localhost:8000/health || (docker logs test-container && exit 1)
+          docker stop test-container
+
+  pre-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files

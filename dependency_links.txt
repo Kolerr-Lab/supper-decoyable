@@ -1,0 +1,16 @@
+# dependency_links.txt
+# List of direct URLs or VCS references to packages not available on PyPI.
+# Format examples:
+#   - Archive URL: https://.../package-1.2.3.tar.gz#egg=package-1.2.3
+#   - Git (HTTPS): git+https://github.com/ORG/repo.git@v1.2.3#egg=package
+#   - Git (SSH): git+ssh://git@github.com/ORG/repo.git@branch#egg=package
+#
+# Pip can use these with requirements that reference the package name,
+# or with: pip install -r requirements.txt --no-index --find-links=dependency_links.txt
+
+https://github.com/example-org/example-package/archive/refs/tags/v1.2.3.zip#egg=example_package-1.2.3
+git+https://github.com/example-org/internal-lib.git@release-0.4.0#egg=internal_lib
+git+ssh://git@github.com/example-org/experimental-tooling.git@main#egg=experimental_tooling
+https://files.example.com/python/custom_dep-0.0.5.tar.gz#egg=custom_dep-0.0.5
+
+# Add additional direct URLs or VCS refs below, one per line.

@@ -1,9 +1,35 @@
+// .vscode/extensions.json
+// Workspace extension recommendations tuned for open-source projects:
+// - help contributors get a consistent, linted, and documented experience
+// - focus on Git/GitHub, Markdown, linting/formatting, containers & CI-friendly tooling
 {
+  // Extensions recommended for this repository
   "recommendations": [
-    "ms-python.python",
-    "ms-python.vscode-pylance",
-    "ms-azuretools.vscode-docker",
-    "charliermarsh.ruff",
-    "redhat.vscode-yaml"
-  ]
+    // Git / GitHub
+    "eamodio.gitlens",                          // git history, annotations, code authorship
+    "GitHub.vscode-pull-request-github",       // PRs, issues, and GitHub workflows integration
+    "mhutchie.git-graph",                      // visual commit graph and branch management
+
+    // Linting & formatting
+    "dbaeumer.vscode-eslint",                  // ESLint integration (JS/TS)
+    "esbenp.prettier-vscode",                  // Prettier formatting
+    "EditorConfig.EditorConfig",               // EditorConfig support to normalize settings
+
+    // Markdown & docs
+    "yzhang.markdown-all-in-one",              // markdown productivity (TOC, shortcuts)
+    "DavidAnson.vscode-markdownlint",          // markdown linting rules
+
+    // Language / tooling helpers common in OSS
+    "ms-python.python",                        // Python language support (if repo has Python)
+    "redhat.vscode-yaml",                      // YAML support & schema validation (CI config)
+    "ms-azuretools.vscode-docker",             // Dockerfile and image tooling
+    "ms-vscode-remote.remote-containers",      // Dev Containers (reproducible dev environments)
+
+    // Quality-of-life
+    "streetsidesoftware.code-spell-checker"    // spell checking for docs and comments
+  ],
+
+  // Extensions to avoid recommending at workspace level (optional).
+  // Keep this list empty unless you need to explicitly discourage some popular extensions.
+  "unwantedRecommendations": []
 }

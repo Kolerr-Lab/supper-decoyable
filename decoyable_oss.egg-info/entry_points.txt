@@ -1,0 +1,3 @@
+# no entry points for this distribution
+# This file is intentionally left without any entry-point definitions.
+# Parsers will ignore comment lines and treat the package as having no entry points.

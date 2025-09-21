@@ -1,11 +1,49 @@
 {
-  "python.pythonPath": ".venv/bin/python",
-  "python.analysis.typeCheckingMode": "basic",
-  "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": "explicit"
+  // VS Code Python / Pylance settings tuned to avoid spurious Pylance warnings
+  // Adjust paths below to match your project layout (e.g. "src", "app", ".venv/Lib/site-packages", etc.)
+  "python.analysis.extraPaths": ["./", "src", "lib"],
+
+  // Turn off strict type checking to suppress type-related diagnostics
+  "python.analysis.typeCheckingMode": "off",
+
+  // Limit diagnostics to open files to reduce workspace noise (change to "workspace" if you want full analysis)
+  "python.analysis.diagnosticMode": "openFilesOnly",
+
+  // Suppress specific Pylance diagnostics completely
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingImports": "none",
+    "reportMissingModuleSource": "none",
+    "reportOptionalMemberAccess": "none",
+    "reportOptionalSubscript": "none",
+    "reportGeneralTypeIssues": "none",
+    "reportIncompatibleVariableOverride": "none"
   },
-  "python.testing.pytestArgs": ["tests"],
-  "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+
+  // If you rely on a local virtual environment in .venv, uncomment and adjust:
+  // "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+
+  // Linting & formatting (linting issues are separate from Pylance diagnostics)
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true,
+  "python.linting.flake8Enabled": false,
+  "python.formatting.provider": "black",
+  "editor.formatOnSave": true,
+"cSpell.words": [
+  "addgroup",
+  "adduser",
+  "appdb",
+  "decoyable",
+  "healthcheck",
+  "isready",
+  "pyproject",
+  "PYTHONDONTWRITEBYTECODE",
+  "PYTHONUNBUFFERED",
+  "setuptools",
+  "Uvicorn",
+  "VENV",
+  "virtualenv",
+  "webnet"
+],
+"python-envs.defaultEnvManager": "ms-python.python:system",
+"python-envs.pythonProjects": []
 }

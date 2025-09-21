@@ -1,7 +1,153 @@
-.venv/
-__pycache__/
-*.pyc
+# Master .gitignore for safety — prevent committing secrets, keys, local artifacts
+
+# Sensitive environment & secrets
 .env
-*.log
+.env.*
+*.env
+secrets.*
+secret.*
+*.secret
+*.secrets
+*.key
+*.pem
+*.crt
+*.p12
+*.jks
+*.asc
+
+# SSH / private keys
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.pub
+.ssh/
+
+# Cloud / credentials
+.aws/
+.aws/credentials
+.gcloud/
+.azure/
+docker/config.json
+.kube/
+credentials.*
+*.credentials
+*.vault
+
+# App/framework specific sensitive files
+config/master.key
+config/credentials.yml.enc
+credentials.yml
+secrets.yml
+.env.local
+.env.*.local
+
+# Build artifacts / dependencies
+node_modules/
+bower_components/
+vendor/
 dist/
-*.egg-info/
+build/
+out/
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Package manager logs & caches
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json?keep
+.pnpm-store/
+.pnpm-debug.log
+
+# Runtime files & logs
+*.log
+logs/
+*.tmp
+tmp/
+temp/
+*.pid
+*.seed
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+Icon?
+
+# IDEs / editors
+.vscode/
+.idea/
+*.suo
+*.user
+*.userprefs
+*.swp
+*.bak
+*.tmp
+*.history
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+env/
+ENV/
+
+# Ruby / Rails
+*.gem
+.bundle/
+log/
+tmp/
+.byebug_history
+
+# Java / Gradle / Maven
+.gradle/
+gradle-app.setting
+.gradle/
+build/
+.gradle/
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+.crash
+override.tf
+override.tf.json
+*_override.tf
+
+# Docker / Compose local overrides
+docker-compose.override.yml
+docker-compose.*.local.yml
+
+# Coverage / test output
+coverage/
+.nyc_output/
+jest/
+test-results/
+
+# Misc caches & workspace
+.cache/
+.sass-cache/
+.idea/
+npm-packages-offline-cache/
+*.cache
+
+# Lock down common accidental commits
+*.env.*
+*.local
+*.secret
+*.bak
+*.orig
+*.swp
+
+# Keep this file tracked
+!.gitignore

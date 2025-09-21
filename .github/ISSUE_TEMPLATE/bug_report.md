@@ -1,25 +1,56 @@
 ---
-name: 🐞 Bug report
-about: Report a reproducible bug in Supper-Decoyable
-labels: bug
+name: "Bug report"
+about: "Report a reproducible bug to help maintainers fix it quickly."
+title: "[BUG] "
+labels: ["bug"]
+assignees: []
 ---
 
-### Describe the bug
-A clear and concise description.
+## Summary
+Provide a one-line summary of the bug.
 
-### To Reproduce
-Steps to reproduce the behavior:
+## Steps to reproduce
+1. Environment/setup (commands to run)
+2. Exact steps (clicks/inputs)
+3. What you expected to happen
 
-### Expected behavior
-What you expected to happen.
+## Actual behavior
+What happened instead (error messages, wrong output).
 
-### Screenshots / Logs
-If applicable, add screenshots or logs.
+## Reproduction (minimal)
+If possible, include a minimal repro (link to a small repo, gist, or paste a minimal code sample).
 
-### Environment
-- OS: [e.g. Windows 11, Ubuntu 22.04]
-- Python version: [e.g. 3.11]
-- Decoyable version: [output of `ogu --version`]
+```bash
+# commands to reproduce
+```
 
-### Additional context
-Add any other context.
+```js
+// minimal code sample
+```
+
+## Environment
+- Project version:
+- OS:
+- Node / Python / Browser and version:
+- Relevant dependencies and versions:
+
+## Logs & stack traces
+Paste full error output or stack trace here:
+
+```
+<paste logs>
+```
+
+## Screenshots
+If helpful, add screenshots or GIFs.
+
+## Workarounds tried
+List steps you tried to mitigate the issue.
+
+## Checklist
+- [ ] I read the contribution guidelines
+- [ ] I searched existing issues and PRs
+- [ ] This report contains a minimal reproduction
+
+## Additional context
+Any other relevant info (links, related issues, suspected cause).

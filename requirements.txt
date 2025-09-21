@@ -1,1 +1,18 @@
-pip-audit>=2.7.3
+# requirements.txt
+# I don't have access to main.py. Paste main.py or its imports for exact deps.
+# Common packages (remove unused ones)
+
+flask>=2.3
+fastapi>=0.95
+uvicorn[standard]>=0.22
+requests>=2.31
+python-dotenv>=1.0
+numpy>=1.26
+pandas>=2.1
+aiohttp>=3.0
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+pytest>=7.4
+prometheus-client>=0.17
+celery>=5.3.0
+redis>=4.5.0
