@@ -210,9 +210,22 @@ jobs:
       - name: Test Docker container health
         run: |
           docker run -d --name test-container -p 8000:8000 decoyable:test
-          sleep 15
-          curl -f http://localhost:8000/health || (docker logs test-container && exit 1)
+          timeout=60
+          counter=0
+          while [ $counter -lt $timeout ]; do
+            if curl -f http://localhost:8000/health >/dev/null 2>&1; then
+              echo "Health check passed"
+              docker stop test-container
+              exit 0
+            fi
+            echo "Waiting for health check... ($counter/$timeout)"
+            sleep 5
+            counter=$((counter + 5))
+          done
+          echo "Health check failed after $timeout seconds"
+          docker logs test-container
           docker stop test-container
+          exit 1
 
   pre-commit:
     runs-on: ubuntu-latest
