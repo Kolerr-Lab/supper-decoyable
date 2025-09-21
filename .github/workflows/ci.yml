@@ -1,14 +1,33 @@
-
 name: CI
-on: [push, pull_request]
+
+on:
+  push:
+  pull_request:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
-        with: {python-version: '3.11'}
-      - run: python -m venv .venv && source .venv/bin/activate && pip install -e .[dev]
-      - run: source .venv/bin/activate && ruff check . && black --check . && mypy decoyable
-      - run: source .venv/bin/activate && pytest -q
-      - run: source .venv/bin/activate && pip-audit -r requirements.txt || true
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev]
+
+      - name: Lint & Type check
+        run: |
+          ruff check .
+          black --check .
+          mypy decoyable
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Security audit
+        run: pip-audit -r requirements.txt || true
