@@ -1,8 +1,9 @@
 import importlib
+import re
 import subprocess
 import sys
 from pathlib import Path
-import re
+
 import pytest
 
 # tests/test_cli.py
@@ -26,8 +27,7 @@ def _run_module(args):
     return subprocess.run(
         cmd,
         cwd=str(_project_root()),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         text=True,
         timeout=MODULE_RUN_TIMEOUT,
     )
@@ -38,7 +38,9 @@ def _combine_output(cp):
 
 
 def _looks_like_help(output):
-    return bool(re.search(r"\bUsage\b|\busage\b|--help\b|Options\b|\boptions\b", output))
+    return bool(
+        re.search(r"\bUsage\b|\busage\b|--help\b|Options\b|\boptions\b", output)
+    )
 
 
 def _looks_like_version(output):
@@ -57,8 +59,12 @@ def test_cli_help_shows_usage():
     """`python -m <pkg> --help` should print usage/help text and exit cleanly."""
     cp = _run_module(["--help"])
     out = _combine_output(cp)
-    assert cp.returncode == 0, f"Expected zero exit code for --help, got {cp.returncode}. Output: {out!r}"
-    assert _looks_like_help(out), f"Help output did not look like usage/help. Output: {out!r}"
+    assert (
+        cp.returncode == 0
+    ), f"Expected zero exit code for --help, got {cp.returncode}. Output: {out!r}"
+    assert _looks_like_help(
+        out
+    ), f"Help output did not look like usage/help. Output: {out!r}"
 
 
 def test_cli_version_flag_if_present():
@@ -72,7 +78,9 @@ def test_cli_version_flag_if_present():
     out = _combine_output(cp)
     if cp.returncode != 0:
         pytest.skip("--version not supported by the CLI (non-zero exit code)")
-    assert _looks_like_version(out), f"--version output did not contain a version string. Output: {out!r}"
+    assert _looks_like_version(
+        out
+    ), f"--version output did not contain a version string. Output: {out!r}"
 
 
 def test_cli_no_args_behavior():
@@ -85,4 +93,6 @@ def test_cli_no_args_behavior():
     if cp.returncode == 0:
         assert True
     else:
-        assert _looks_like_help(out), f"No-arg invocation failed (exit {cp.returncode}) and did not show usage. Output: {out!r}"
+        assert _looks_like_help(
+            out
+        ), f"No-arg invocation failed (exit {cp.returncode}) and did not show usage. Output: {out!r}"

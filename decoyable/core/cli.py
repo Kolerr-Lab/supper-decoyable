@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import argparse
 import importlib
 import inspect
@@ -34,7 +35,7 @@ def configure_logging(verbose: bool) -> None:
         LOGGER.addHandler(handler)
 
 
-def load_main_module() -> Optional[object]:
+def load_main_module() -> object | None:
     """
     Try to import the project's main module. Prefer decoyable.main, fall back to main.
     Returns the imported module or None.
@@ -51,7 +52,7 @@ def load_main_module() -> Optional[object]:
     return None
 
 
-def find_entry_callable(mod: object) -> Optional[Callable]:
+def find_entry_callable(mod: object) -> Callable | None:
     """
     From a module, return the best candidate callable to run.
     Looks for attributes in order: main, run, cli. Falls back to a callable module-level object.
@@ -63,19 +64,31 @@ def find_entry_callable(mod: object) -> Optional[Callable]:
     for name in candidates:
         obj = getattr(mod, name, None)
         if callable(obj):
-            LOGGER.debug("Using callable '%s' from module %s", name, getattr(mod, "__name__", "<module>"))
+            LOGGER.debug(
+                "Using callable '%s' from module %s",
+                name,
+                getattr(mod, "__name__", "<module>"),
+            )
             return obj
 
     # If module itself is callable (rare) return it
     if callable(mod):
-        LOGGER.debug("Module %s is callable; using module as entrypoint", getattr(mod, "__name__", "<module>"))
+        LOGGER.debug(
+            "Module %s is callable; using module as entrypoint",
+            getattr(mod, "__name__", "<module>"),
+        )
         return mod
 
-    LOGGER.debug("No callable entrypoint found in module %s", getattr(mod, "__name__", "<module>"))
+    LOGGER.debug(
+        "No callable entrypoint found in module %s",
+        getattr(mod, "__name__", "<module>"),
+    )
     return None
 
 
-def call_entrypoint(func: Callable, namespace: argparse.Namespace, forwarded_args: list[str]) -> int:
+def call_entrypoint(
+    func: Callable, namespace: argparse.Namespace, forwarded_args: list[str]
+) -> int:
     """
     Call the discovered entrypoint with an appropriate argument pattern.
     Strategies:
@@ -88,7 +101,7 @@ def call_entrypoint(func: Callable, namespace: argparse.Namespace, forwarded_arg
     sig = inspect.signature(func)
     params = sig.parameters.values()
     accepts_var_pos = any(p.kind == inspect.Parameter.VAR_POSITIONAL for p in params)
-    accepts_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params)
+    any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params)
 
     try:
         # No parameters
@@ -127,17 +140,25 @@ def call_entrypoint(func: Callable, namespace: argparse.Namespace, forwarded_arg
             raise
 
 
-def build_parser(prog: Optional[str] = None) -> argparse.ArgumentParser:
+def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog=prog, description="decoyable CLI launcher")
-    parser.add_argument("--version", action="store_true", help="Show version information (if available)")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
-    parser.add_argument("--dry-run", action="store_true", help="Do not perform actions; for testing")
-    parser.add_argument("--config", "-c", metavar="FILE", help="Path to a configuration file")
+    parser.add_argument(
+        "--version", action="store_true", help="Show version information (if available)"
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose logging"
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Do not perform actions; for testing"
+    )
+    parser.add_argument(
+        "--config", "-c", metavar="FILE", help="Path to a configuration file"
+    )
     # All unknown args will be collected and forwarded to the underlying entrypoint
     return parser
 
 
-def show_version(mod: Optional[object]) -> None:
+def show_version(mod: object | None) -> None:
     version = None
     # Try common places for version info
     if mod is not None:
@@ -155,7 +176,7 @@ def show_version(mod: Optional[object]) -> None:
         print(f"decoyable: {version}")
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
 
@@ -179,12 +200,16 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     entry = find_entry_callable(mod)
     if entry is None:
-        LOGGER.error("No runnable entrypoint found in %s", getattr(mod, "__name__", "<module>"))
+        LOGGER.error(
+            "No runnable entrypoint found in %s", getattr(mod, "__name__", "<module>")
+        )
         return 3
 
     # Handle dry-run: if true, just print what would be called
     if args.dry_run:
-        print("Dry run: would call entrypoint %s with forwarded args: %s" % (getattr(entry, "__name__", repr(entry)), extras))
+        print(
+            "Dry run: would call entrypoint {} with forwarded args: {}".format(getattr(entry, "__name__", repr(entry)), extras)
+        )
         return 0
 
     try:

@@ -5,15 +5,14 @@ LLM-powered attack analysis and adaptive defense for DECOYABLE.
 Classifies attacks, provides recommendations, and adapts defenses dynamically.
 """
 
-import asyncio
 import json
 import logging
 import os
-import sqlite3
 import re
-from typing import Dict, Any, List, Optional, Tuple
+import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 import httpx
 from pydantic import BaseModel
@@ -80,6 +79,7 @@ ATTACK_PATTERNS = {
 
 class AttackAnalysis(BaseModel):
     """Model for LLM analysis results."""
+
     attack_type: str
     confidence: float
     recommended_action: str
@@ -90,6 +90,7 @@ class AttackAnalysis(BaseModel):
 
 class KnowledgeEntry(BaseModel):
     """Model for knowledge base entries."""
+
     id: Optional[int] = None
     timestamp: str
     attack_data: Dict[str, Any]
@@ -147,7 +148,8 @@ class KnowledgeBase:
     def _init_db(self) -> None:
         """Initialize database schema."""
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 CREATE TABLE IF NOT EXISTS attacks (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
@@ -156,50 +158,65 @@ class KnowledgeBase:
                     feedback TEXT,
                     created_at REAL
                 )
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_timestamp ON attacks(timestamp)
-            """)
-            conn.execute("""
+            """
+            )
+            conn.execute(
+                """
                 CREATE INDEX IF NOT EXISTS idx_attack_type ON attacks(
                     json_extract(analysis_result, '$.attack_type')
                 )
-            """)
+            """
+            )
 
-    def store_analysis(self, attack_data: Dict[str, Any], analysis_result: Dict[str, Any]) -> int:
+    def store_analysis(
+        self, attack_data: Dict[str, Any], analysis_result: Dict[str, Any]
+    ) -> int:
         """Store attack analysis in knowledge base."""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 INSERT INTO attacks (timestamp, attack_data, analysis_result, created_at)
                 VALUES (?, ?, ?, ?)
-            """, (
-                attack_data.get("timestamp", datetime.utcnow().isoformat()),
-                json.dumps(attack_data),
-                json.dumps(analysis_result),
-                datetime.utcnow().timestamp()
-            ))
+            """,
+                (
+                    attack_data.get("timestamp", datetime.utcnow().isoformat()),
+                    json.dumps(attack_data),
+                    json.dumps(analysis_result),
+                    datetime.utcnow().timestamp(),
+                ),
+            )
             return cursor.lastrowid
 
     def get_recent_analyses(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Get recent attack analyses."""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT id, timestamp, attack_data, analysis_result, feedback
                 FROM attacks
                 ORDER BY created_at DESC
                 LIMIT ?
-            """, (limit,))
+            """,
+                (limit,),
+            )
 
             results = []
             for row in cursor.fetchall():
                 attack_id, timestamp, attack_data, analysis_result, feedback = row
-                results.append({
-                    "id": attack_id,
-                    "timestamp": timestamp,
-                    "attack_data": json.loads(attack_data),
-                    "analysis_result": json.loads(analysis_result),
-                    "feedback": feedback
-                })
+                results.append(
+                    {
+                        "id": attack_id,
+                        "timestamp": timestamp,
+                        "attack_data": json.loads(attack_data),
+                        "analysis_result": json.loads(analysis_result),
+                        "feedback": feedback,
+                    }
+                )
             return results
 
     def get_attack_stats(self, days: int = 7) -> Dict[str, Any]:
@@ -207,7 +224,8 @@ class KnowledgeBase:
         since_timestamp = (datetime.utcnow() - timedelta(days=days)).timestamp()
 
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 SELECT
                     json_extract(analysis_result, '$.attack_type') as attack_type,
                     COUNT(*) as count
@@ -215,7 +233,9 @@ class KnowledgeBase:
                 WHERE created_at >= ?
                 GROUP BY attack_type
                 ORDER BY count DESC
-            """, (since_timestamp,))
+            """,
+                (since_timestamp,),
+            )
 
             stats = {"total_attacks": 0, "attack_types": {}}
             for row in cursor.fetchall():
@@ -228,9 +248,12 @@ class KnowledgeBase:
     def update_feedback(self, attack_id: int, feedback: str) -> bool:
         """Update feedback for an attack analysis."""
         with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.execute("""
+            cursor = conn.execute(
+                """
                 UPDATE attacks SET feedback = ? WHERE id = ?
-            """, (feedback, attack_id))
+            """,
+                (feedback, attack_id),
+            )
             return cursor.rowcount > 0
 
 
@@ -280,14 +303,14 @@ JSON Response:
                 "https://api.openai.com/v1/chat/completions",
                 headers={
                     "Authorization": f"Bearer {OPENAI_API_KEY}",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 },
                 json={
                     "model": "gpt-3.5-turbo",
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": 500,
-                    "temperature": 0.1
-                }
+                    "temperature": 0.1,
+                },
             )
 
             if response.status_code == 200:
@@ -302,7 +325,9 @@ JSON Response:
                     logger.error(f"Failed to parse LLM response: {content}")
                     return await analyze_attack_patterns(attack_data)
             else:
-                logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
+                logger.error(
+                    f"OpenAI API error: {response.status_code} - {response.text}"
+                )
                 return await analyze_attack_patterns(attack_data)
 
     except Exception as exc:
@@ -322,16 +347,23 @@ async def analyze_attack_patterns(attack_data: Dict[str, Any]) -> Dict[str, Any]
     """
     # Combine all text for analysis
     text_to_analyze = ""
-    text_to_analyze += attack_data.get('path', '')
-    text_to_analyze += ' ' + json.dumps(attack_data.get('headers', {}))
-    text_to_analyze += ' ' + str(attack_data.get('body', ''))
-    text_to_analyze += ' ' + json.dumps(attack_data.get('query_params', {}))
+    text_to_analyze += attack_data.get("path", "")
+    text_to_analyze += " " + json.dumps(attack_data.get("headers", {}))
+    text_to_analyze += " " + str(attack_data.get("body", ""))
+    text_to_analyze += " " + json.dumps(attack_data.get("query_params", {}))
 
     # Check against patterns with prioritization
     all_patterns = adaptive_defense.get_all_patterns()
 
     # Priority order: most dangerous to least dangerous
-    priority_order = ["sqli", "command_injection", "xss", "path_traversal", "brute_force", "reconnaissance"]
+    priority_order = [
+        "sqli",
+        "command_injection",
+        "xss",
+        "path_traversal",
+        "brute_force",
+        "reconnaissance",
+    ]
 
     matches = {}
     max_confidence = 0.0
@@ -404,7 +436,7 @@ async def analyze_attack_patterns(attack_data: Dict[str, Any]) -> Dict[str, Any]
         "recommended_action": action,
         "explanation": f"Pattern-based analysis detected {best_attack_type}",
         "severity": severity,
-        "indicators": best_indicators
+        "indicators": best_indicators,
     }
 
 
@@ -434,7 +466,9 @@ async def analyze_attack_async(attack_data: Dict[str, Any]) -> Dict[str, Any]:
     return analysis_result
 
 
-async def apply_adaptive_defense(attack_data: Dict[str, Any], analysis_result: Dict[str, Any]) -> None:
+async def apply_adaptive_defense(
+    attack_data: Dict[str, Any], analysis_result: Dict[str, Any]
+) -> None:
     """
     Apply adaptive defense based on analysis results.
 
@@ -470,7 +504,7 @@ async def apply_adaptive_defense(attack_data: Dict[str, Any], analysis_result: D
                 path.replace(".php", ".bak"),
                 path.replace(".php", ".old"),
                 path + ".backup",
-                path + "~"
+                path + "~",
             ]
             for decoy in decoy_variants:
                 if decoy not in adaptive_defense.decoy_endpoints:
@@ -488,19 +522,17 @@ from fastapi import APIRouter
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
+
 @router.get("/recent")
 async def get_recent_analyses(limit: int = 10) -> Dict[str, Any]:
     """Get recent attack analyses."""
     try:
         analyses = knowledge_base.get_recent_analyses(limit)
-        return {
-            "analyses": analyses,
-            "count": len(analyses),
-            "limit": limit
-        }
+        return {"analyses": analyses, "count": len(analyses), "limit": limit}
     except Exception as exc:
         logger.error(f"Failed to get recent analyses: {exc}")
         return {"error": str(exc)}
+
 
 @router.get("/stats")
 async def get_attack_stats(days: int = 7) -> Dict[str, Any]:
@@ -511,6 +543,7 @@ async def get_attack_stats(days: int = 7) -> Dict[str, Any]:
     except Exception as exc:
         logger.error(f"Failed to get attack stats: {exc}")
         return {"error": str(exc)}
+
 
 @router.post("/feedback/{attack_id}")
 async def add_feedback(attack_id: int, feedback_data: Dict[str, str]) -> Dict[str, Any]:
@@ -523,6 +556,7 @@ async def add_feedback(attack_id: int, feedback_data: Dict[str, str]) -> Dict[st
         logger.error(f"Failed to add feedback: {exc}")
         return {"error": str(exc)}
 
+
 @router.get("/patterns")
 async def get_patterns() -> Dict[str, Any]:
     """Get current attack detection patterns."""
@@ -530,5 +564,5 @@ async def get_patterns() -> Dict[str, Any]:
         "static_patterns": ATTACK_PATTERNS,
         "dynamic_patterns": adaptive_defense.dynamic_patterns,
         "blocked_ips": list(adaptive_defense.blocked_ips),
-        "decoy_endpoints": list(adaptive_defense.decoy_endpoints)
+        "decoy_endpoints": list(adaptive_defense.decoy_endpoints),
     }

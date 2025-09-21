@@ -1,12 +1,13 @@
 from __future__ import annotations
+
+import argparse
 import ast
 import os
 import subprocess
 import sys
 from collections import defaultdict
-from typing import Dict, Iterable, List, Optional, Set, Tuple
 from importlib import metadata as importlib_metadata
-import argparse
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 """
 decoyable.scanners.deps
@@ -21,7 +22,6 @@ This is a best-effort, offline-safe scanner:
 If you want me to adapt this precisely to your main.py, paste main.py here and
 I'll update this file to match the expected API.
 """
-
 
 
 # Compatibility: importlib_metadata backport is not required here because
@@ -40,9 +40,13 @@ __all__ = [
 ]
 
 
-def find_python_files(root: str, ignore_dirs: Optional[Iterable[str]] = None) -> List[str]:
+def find_python_files(
+    root: str, ignore_dirs: Iterable[str] | None = None
+) -> list[str]:
     """Recursively find .py files under root, skipping common virtualenv/build dirs."""
-    ignore_dirs = set(ignore_dirs or {"venv", ".venv", "__pycache__", "build", "dist", ".git"})
+    ignore_dirs = set(
+        ignore_dirs or {"venv", ".venv", "__pycache__", "build", "dist", ".git"}
+    )
     files = []
     for dirpath, dirnames, filenames in os.walk(root):
         # modify dirnames in-place to skip ignored dirs
@@ -53,15 +57,15 @@ def find_python_files(root: str, ignore_dirs: Optional[Iterable[str]] = None) ->
     return files
 
 
-def extract_imports_from_file(path: str) -> Set[str]:
+def extract_imports_from_file(path: str) -> set[str]:
     """Return top-level module names imported in a .py file (e.g. 'os', 'requests')."""
     try:
-        with open(path, "r", encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             node = ast.parse(fh.read(), filename=path)
     except (SyntaxError, UnicodeDecodeError, OSError):
         return set()
 
-    imports: Set[str] = set()
+    imports: set[str] = set()
     for n in ast.walk(node):
         if isinstance(n, ast.Import):
             for alias in n.names:
@@ -75,20 +79,22 @@ def extract_imports_from_file(path: str) -> Set[str]:
     return imports
 
 
-def collect_imports_from_dir(root: str, ignore_dirs: Optional[Iterable[str]] = None) -> Set[str]:
+def collect_imports_from_dir(
+    root: str, ignore_dirs: Iterable[str] | None = None
+) -> set[str]:
     """Scan a directory and return a set of imported top-level modules."""
     files = find_python_files(root, ignore_dirs=ignore_dirs)
-    imports: Set[str] = set()
+    imports: set[str] = set()
     for f in files:
         imports.update(extract_imports_from_file(f))
     return imports
 
 
-def parse_requirements(path: str) -> List[str]:
+def parse_requirements(path: str) -> list[str]:
     """Parse a requirements-style file (simple parsing: ignores comments and editable lines)."""
-    reqs: List[str] = []
+    reqs: list[str] = []
     try:
-        with open(path, "r", encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             for raw in fh:
                 line = raw.strip()
                 if not line or line.startswith("#"):
@@ -105,12 +111,12 @@ def parse_requirements(path: str) -> List[str]:
     return reqs
 
 
-def installed_packages() -> Dict[str, str]:
+def installed_packages() -> dict[str, str]:
     """
     Return a mapping of distribution name -> version for installed packages.
     Uses importlib.metadata for the current environment.
     """
-    pkgs: Dict[str, str] = {}
+    pkgs: dict[str, str] = {}
     for dist in importlib_metadata.distributions():
         try:
             md = getattr(dist, "metadata", None)
@@ -141,11 +147,13 @@ def installed_packages() -> Dict[str, str]:
     return pkgs
 
 
-def _top_level_modules_for_distribution(dist: importlib_metadata.Distribution) -> Set[str]:
+def _top_level_modules_for_distribution(
+    dist: importlib_metadata.Distribution,
+) -> set[str]:
     """
     Heuristic: read top_level.txt from metadata to find top-level modules provided by package.
     """
-    modules: Set[str] = set()
+    modules: set[str] = set()
     try:
         # metadata_files or read_text depending on importlib version
         text = None
@@ -175,15 +183,15 @@ def _top_level_modules_for_distribution(dist: importlib_metadata.Distribution) -
     return modules
 
 
-def map_imports_to_packages(imports: Iterable[str]) -> Dict[str, List[str]]:
+def map_imports_to_packages(imports: Iterable[str]) -> dict[str, list[str]]:
     """
     Map each import name to a list of distributions that appear to provide it.
     This is a heuristic using each distribution's top_level.txt metadata.
     """
-    mapping: Dict[str, List[str]] = defaultdict(list)
+    mapping: dict[str, list[str]] = defaultdict(list)
     imports_set = set(imports)
     # build inverted index: top-level module -> list of distributions
-    tld_to_dists: Dict[str, List[str]] = defaultdict(list)
+    tld_to_dists: dict[str, list[str]] = defaultdict(list)
     for dist in importlib_metadata.distributions():
         try:
             # Prefer metadata 'Name' if present; avoid calling .get() on PackageMetadata
@@ -207,12 +215,14 @@ def map_imports_to_packages(imports: Iterable[str]) -> Dict[str, List[str]]:
             mapping[imp] = sorted(set(tld_to_dists[imp]))
         else:
             # try direct package name match (import name might equal distribution name)
-            candidates = [d for d in tld_to_dists.get(imp, [])]
+            candidates = list(tld_to_dists.get(imp, []))
             mapping[imp] = candidates
     return mapping
 
 
-def missing_dependencies(project_root: str, requirements_path: Optional[str] = None) -> Tuple[Set[str], Dict[str, List[str]]]:
+def missing_dependencies(
+    project_root: str, requirements_path: str | None = None
+) -> tuple[set[str], dict[str, list[str]]]:
     """
     Return (missing_imports, mapping) where:
       - missing_imports: imports found in project that are not satisfied by installed packages or requirements
@@ -227,7 +237,7 @@ def missing_dependencies(project_root: str, requirements_path: Optional[str] = N
 
     mapping = map_imports_to_packages(imports)
 
-    missing: Set[str] = set()
+    missing: set[str] = set()
     for imp in imports:
         providers = mapping.get(imp, [])
         satisfied = False
@@ -256,13 +266,17 @@ def write_requirements(packages: Iterable[str], output_path: str) -> None:
 
 
 # Optional convenience: simple CLI when run as a script
-def _main_cli(argv: Optional[List[str]] = None) -> int:
+def _main_cli(argv: list[str] | None = None) -> int:
     argv = argv or sys.argv[1:]
 
-    ap = argparse.ArgumentParser(description="Scan a Python project for imports and missing deps.")
+    ap = argparse.ArgumentParser(
+        description="Scan a Python project for imports and missing deps."
+    )
     ap.add_argument("project_root", nargs="?", default=".", help="Project root to scan")
     ap.add_argument("--requirements", "-r", help="requirements.txt path to consider")
-    ap.add_argument("--write", "-w", help="write missing packages (heuristic) to this file")
+    ap.add_argument(
+        "--write", "-w", help="write missing packages (heuristic) to this file"
+    )
     args = ap.parse_args(argv)
 
     missing, mapping = missing_dependencies(args.project_root, args.requirements)
@@ -272,7 +286,9 @@ def _main_cli(argv: Optional[List[str]] = None) -> int:
         print("Missing imports (heuristic):")
         for imp in sorted(missing):
             providers = mapping.get(imp) or []
-            print(f"  {imp} -> suggestions: {', '.join(providers) or '<no suggestion>'}")
+            print(
+                f"  {imp} -> suggestions: {', '.join(providers) or '<no suggestion>'}"
+            )
         if args.write:
             # flatten suggestions: pick first suggestion or the import name itself
             chosen = []

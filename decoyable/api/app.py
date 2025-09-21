@@ -1,16 +1,15 @@
 import logging
-import sys
 import os
-from typing import Any, Optional
-from pathlib import Path
-from fastapi import FastAPI, Request, Response, HTTPException
-from fastapi.responses import JSONResponse
+import sys
+from typing import Optional
+
+import uvicorn
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-import uvicorn
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from fastapi.responses import JSONResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, Field, validator
-import re
 
 # /g:/TECH/DECOYABLE/decoyable/api/app.py
 """
@@ -18,7 +17,6 @@ FastAPI application bootstrap for the decoyable project.
 This file attempts to auto-wire routers or an init_app from a top-level main.py if present.
 If you paste the contents of your main.py I can adapt this precisely.
 """
-
 
 
 # Make sure project root is importable (adjust if your layout differs)
@@ -32,16 +30,22 @@ logging.basicConfig(level=logging.INFO)
 
 class ScanRequest(BaseModel):
     """Request model for scan endpoints with validation."""
+
     path: str = Field(..., min_length=1, max_length=4096, description="Path to scan")
 
-    @validator('path')
+    @validator("path")
     def validate_path(cls, v):
         """Validate that the path is safe and exists."""
         if not v or not v.strip():
             raise ValueError("Path cannot be empty")
 
         # Prevent path traversal attacks
-        if ".." in v or v.startswith("/etc") or v.startswith("/proc") or v.startswith("/sys"):
+        if (
+            ".." in v
+            or v.startswith("/etc")
+            or v.startswith("/proc")
+            or v.startswith("/sys")
+        ):
             raise ValueError("Invalid path: potential security risk")
 
         # Convert to absolute path and validate
@@ -93,6 +97,7 @@ def create_app() -> FastAPI:
     async def scan_secrets(request: ScanRequest) -> dict:
         """Scan a path for exposed secrets."""
         import time
+
         start_time = time.time()
 
         try:
@@ -109,7 +114,7 @@ def create_app() -> FastAPI:
                 status="success",
                 results={"findings": findings, "count": len(findings)},
                 scan_duration=scan_duration,
-                file_count=len(set(f["filename"] for f in findings)) if findings else 0
+                file_count=len({f["filename"] for f in findings}) if findings else 0,
             )
 
             return {
@@ -117,19 +122,20 @@ def create_app() -> FastAPI:
                 "findings": findings,
                 "count": len(findings),
                 "scan_duration": scan_duration,
-                "result_id": result_id
+                "result_id": result_id,
             }
         except Exception as e:
             scan_duration = int(time.time() - start_time)
             # Store error result
             try:
                 from decoyable.database import store_scan_result
+
                 store_scan_result(
                     scan_type="secrets",
                     target_path=request.path,
                     status="error",
                     error_message=str(e),
-                    scan_duration=scan_duration
+                    scan_duration=scan_duration,
                 )
             except:
                 pass  # Don't let database errors mask the original error
@@ -141,6 +147,7 @@ def create_app() -> FastAPI:
     async def scan_dependencies(request: ScanRequest) -> dict:
         """Scan a project for dependency issues."""
         import time
+
         start_time = time.time()
 
         try:
@@ -156,26 +163,27 @@ def create_app() -> FastAPI:
                 target_path=request.path,
                 status="success",
                 results=result,
-                scan_duration=scan_duration
+                scan_duration=scan_duration,
             )
 
             return {
                 "status": "success",
                 **result,
                 "scan_duration": scan_duration,
-                "result_id": result_id
+                "result_id": result_id,
             }
         except Exception as e:
             scan_duration = int(time.time() - start_time)
             # Store error result
             try:
                 from decoyable.database import store_scan_result
+
                 store_scan_result(
                     scan_type="dependencies",
                     target_path=request.path,
                     status="error",
                     error_message=str(e),
-                    scan_duration=scan_duration
+                    scan_duration=scan_duration,
                 )
             except:
                 pass
@@ -187,6 +195,7 @@ def create_app() -> FastAPI:
     async def scan_sast(request: ScanRequest) -> dict:
         """Perform Static Application Security Testing (SAST) on a path."""
         import time
+
         start_time = time.time()
 
         try:
@@ -203,7 +212,7 @@ def create_app() -> FastAPI:
                 status="success",
                 results=sast_results,
                 scan_duration=scan_duration,
-                file_count=sast_results.get("summary", {}).get("files_scanned", 0)
+                file_count=sast_results.get("summary", {}).get("files_scanned", 0),
             )
 
             return {
@@ -211,19 +220,20 @@ def create_app() -> FastAPI:
                 "vulnerabilities": sast_results.get("vulnerabilities", []),
                 "summary": sast_results.get("summary", {}),
                 "scan_duration": scan_duration,
-                "result_id": result_id
+                "result_id": result_id,
             }
         except Exception as e:
             scan_duration = int(time.time() - start_time)
             # Store error result
             try:
                 from decoyable.database import store_scan_result
+
                 store_scan_result(
                     scan_type="sast",
                     target_path=request.path,
                     status="error",
                     error_message=str(e),
-                    scan_duration=scan_duration
+                    scan_duration=scan_duration,
                 )
             except:
                 pass
@@ -243,13 +253,15 @@ def create_app() -> FastAPI:
                 "status": "accepted",
                 "task_id": task.id,
                 "message": "Secrets scan started asynchronously",
-                "check_status_url": f"/tasks/{task.id}"
+                "check_status_url": f"/tasks/{task.id}",
             }
         except Exception as e:
             logger.exception("Error starting async secrets scan")
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.post("/scan/async/dependencies", summary="Asynchronously scan for dependency issues")
+    @app.post(
+        "/scan/async/dependencies", summary="Asynchronously scan for dependency issues"
+    )
     async def scan_dependencies_async(request: ScanRequest) -> dict:
         """Asynchronously scan a project for dependency issues using Celery."""
         try:
@@ -261,7 +273,7 @@ def create_app() -> FastAPI:
                 "status": "accepted",
                 "task_id": task.id,
                 "message": "Dependencies scan started asynchronously",
-                "check_status_url": f"/tasks/{task.id}"
+                "check_status_url": f"/tasks/{task.id}",
             }
         except Exception as e:
             logger.exception("Error starting async dependencies scan")
@@ -279,7 +291,7 @@ def create_app() -> FastAPI:
                 "status": "accepted",
                 "task_id": task.id,
                 "message": "SAST scan started asynchronously",
-                "check_status_url": f"/tasks/{task.id}"
+                "check_status_url": f"/tasks/{task.id}",
             }
         except Exception as e:
             logger.exception("Error starting async SAST scan")
@@ -297,7 +309,7 @@ def create_app() -> FastAPI:
                 "status": "accepted",
                 "task_id": task.id,
                 "message": "Comprehensive security scan started asynchronously",
-                "check_status_url": f"/tasks/{task.id}"
+                "check_status_url": f"/tasks/{task.id}",
             }
         except Exception as e:
             logger.exception("Error starting comprehensive async scan")
@@ -322,10 +334,7 @@ def create_app() -> FastAPI:
             from decoyable.cache import get_cache_stats
 
             stats = get_cache_stats()
-            return {
-                "status": "success",
-                "cache_stats": stats
-            }
+            return {"status": "success", "cache_stats": stats}
         except Exception as e:
             logger.exception("Error getting cache stats")
             raise HTTPException(status_code=500, detail=str(e))
@@ -353,7 +362,9 @@ def create_app() -> FastAPI:
 
             return {
                 "status": "success" if success else "error",
-                "message": "Cache cleared successfully" if success else "Failed to clear cache"
+                "message": (
+                    "Cache cleared successfully" if success else "Failed to clear cache"
+                ),
             }
         except Exception as e:
             logger.exception("Error clearing cache")
@@ -368,27 +379,22 @@ def create_app() -> FastAPI:
             db_manager = get_database_manager()
             stats = db_manager.get_database_stats()
 
-            return {
-                "status": "success",
-                "database_stats": stats
-            }
+            return {"status": "success", "database_stats": stats}
         except Exception as e:
             logger.exception("Error getting database stats")
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/database/results", summary="Get scan results history")
-    async def get_scan_results(scan_type: Optional[str] = None, limit: int = 50) -> dict:
+    async def get_scan_results(
+        scan_type: Optional[str] = None, limit: int = 50
+    ) -> dict:
         """Get historical scan results from database."""
         try:
             from decoyable.database import get_scan_results
 
             results = get_scan_results(scan_type=scan_type, limit=limit)
 
-            return {
-                "status": "success",
-                "results": results,
-                "count": len(results)
-            }
+            return {"status": "success", "results": results, "count": len(results)}
         except Exception as e:
             logger.exception("Error getting scan results")
             raise HTTPException(status_code=500, detail=str(e))
@@ -404,11 +410,14 @@ def create_app() -> FastAPI:
 
             return {
                 "status": "success",
-                "message": f"Cleaned up {deleted_count} expired cache entries"
+                "message": f"Cleaned up {deleted_count} expired cache entries",
             }
         except Exception as e:
             logger.exception("Error cleaning up database")
-            raise HTTPException(status_code=500, detail=str(e))    # Generic exception handler to return JSON
+            raise HTTPException(
+                status_code=500, detail=str(e)
+            )  # Generic exception handler to return JSON
+
     @app.exception_handler(Exception)
     async def generic_exception_handler(request: Request, exc: Exception):
         logger.exception("Unhandled exception: %s", exc)
@@ -420,7 +429,7 @@ def create_app() -> FastAPI:
 
         # If main provides an init_app(app) function, call it for custom wiring
         if hasattr(main_module, "init_app"):
-            maybe = getattr(main_module, "init_app")
+            maybe = main_module.init_app
             if callable(maybe):
                 logger.info("Initializing app via main.init_app(app)")
                 maybe(app)  # type: ignore
@@ -432,7 +441,7 @@ def create_app() -> FastAPI:
 
         # If main exposes an iterable of routers
         if hasattr(main_module, "routers"):
-            routers = getattr(main_module, "routers")
+            routers = main_module.routers
             if isinstance(routers, (list, tuple, set)):
                 for r in routers:
                     logger.info("Including router from main.routers")
@@ -440,7 +449,7 @@ def create_app() -> FastAPI:
 
         # If main exposes a get_router function
         if hasattr(main_module, "get_router"):
-            getter = getattr(main_module, "get_router")
+            getter = main_module.get_router
             if callable(getter):
                 r = getter()
                 logger.info("Including router returned by main.get_router()")
@@ -451,7 +460,8 @@ def create_app() -> FastAPI:
 
     # Include defense routers for active cyber defense
     try:
-        from decoyable.defense import honeypot_router, analysis_router
+        from decoyable.defense import analysis_router, honeypot_router
+
         logger.info("Including defense routers for active cyber defense")
         app.include_router(honeypot_router)
         app.include_router(analysis_router)
@@ -473,17 +483,16 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8000, help="Port to bind to")
     parser.add_argument("--ssl-cert", help="Path to SSL certificate file")
     parser.add_argument("--ssl-key", help="Path to SSL private key file")
-    parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
+    parser.add_argument(
+        "--reload", action="store_true", help="Enable auto-reload for development"
+    )
 
     args = parser.parse_args()
 
     # SSL configuration
     ssl_config = {}
     if args.ssl_cert and args.ssl_key:
-        ssl_config = {
-            "ssl_certfile": args.ssl_cert,
-            "ssl_keyfile": args.ssl_key
-        }
+        ssl_config = {"ssl_certfile": args.ssl_cert, "ssl_keyfile": args.ssl_key}
         print(f"Starting server with SSL on https://{args.host}:{args.port}")
     else:
         print(f"Starting server on http://{args.host}:{args.port}")
@@ -494,5 +503,5 @@ if __name__ == "__main__":
         port=args.port,
         log_level="info",
         reload=args.reload,
-        **ssl_config
+        **ssl_config,
     )

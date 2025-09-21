@@ -1,15 +1,16 @@
 """Redis-based caching layer for DECOYABLE performance optimization."""
 
-import json
 import hashlib
-import os
-from typing import Any, Optional, Dict, List
-from functools import wraps
-import time
+import json
 import logging
+import os
+import time
+from functools import wraps
+from typing import Any, Dict, List, Optional
 
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -58,7 +59,7 @@ class Cache:
             try:
                 data = self.redis_client.get(key)
                 if data:
-                    return json.loads(data.decode('utf-8'))
+                    return json.loads(data.decode("utf-8"))
             except Exception as e:
                 logger.warning(f"Redis get error: {e}")
                 return None
@@ -66,8 +67,8 @@ class Cache:
             # Memory cache fallback
             cache_entry = self.memory_cache.get(key)
             if cache_entry:
-                if time.time() < cache_entry['expires']:
-                    return cache_entry['value']
+                if time.time() < cache_entry["expires"]:
+                    return cache_entry["value"]
                 else:
                     # Expired, remove it
                     del self.memory_cache[key]
@@ -87,10 +88,7 @@ class Cache:
                 return False
         else:
             # Memory cache fallback
-            self.memory_cache[key] = {
-                'value': value,
-                'expires': time.time() + ttl
-            }
+            self.memory_cache[key] = {"value": value, "expires": time.time() + ttl}
             return True
 
     def delete(self, key: str) -> bool:
@@ -127,7 +125,7 @@ class Cache:
         else:
             cache_entry = self.memory_cache.get(key)
             if cache_entry:
-                if time.time() < cache_entry['expires']:
+                if time.time() < cache_entry["expires"]:
                     return True
                 else:
                     # Expired, remove it
@@ -158,11 +156,14 @@ def cached(ttl: Optional[int] = None, key_prefix: str = ""):
         ttl: Time-to-live in seconds (uses cache default if None)
         key_prefix: Prefix for cache keys to avoid collisions
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             cache = get_cache()
-            cache_key = f"{key_prefix}:{func.__name__}:{cache._make_key(*args, **kwargs)}"
+            cache_key = (
+                f"{key_prefix}:{func.__name__}:{cache._make_key(*args, **kwargs)}"
+            )
 
             # Try to get from cache first
             cached_result = cache.get(cache_key)
@@ -179,6 +180,7 @@ def cached(ttl: Optional[int] = None, key_prefix: str = ""):
             return result
 
         return wrapper
+
     return decorator
 
 
@@ -191,13 +193,15 @@ def scan_secrets_cached(paths: List[str]) -> List[Dict[str, Any]]:
     findings = secrets.scan_paths(paths)
     results = []
     for finding in findings:
-        results.append({
-            "filename": finding.filename,
-            "lineno": finding.lineno,
-            "secret_type": finding.secret_type,
-            "masked": finding.masked(),
-            "context": finding.context
-        })
+        results.append(
+            {
+                "filename": finding.filename,
+                "lineno": finding.lineno,
+                "secret_type": finding.secret_type,
+                "masked": finding.masked(),
+                "context": finding.context,
+            }
+        )
 
     return results
 
@@ -212,15 +216,9 @@ def scan_dependencies_cached(path: str) -> Dict[str, Any]:
     results = []
     for imp in sorted(missing_imports):
         providers = import_mapping.get(imp, [])
-        results.append({
-            "import": imp,
-            "providers": providers
-        })
+        results.append({"import": imp, "providers": providers})
 
-    return {
-        "missing_dependencies": results,
-        "count": len(results)
-    }
+    return {"missing_dependencies": results, "count": len(results)}
 
 
 @cached(ttl=1800, key_prefix="sast")  # Cache for 30 minutes
@@ -243,21 +241,22 @@ def get_cache_stats() -> Dict[str, Any]:
     if cache.redis_client:
         try:
             info = cache.redis_client.info()
-            stats.update({
-                "redis_connected": True,
-                "redis_memory_used": info.get("used_memory_human", "unknown"),
-                "redis_keys_count": cache.redis_client.dbsize(),
-                "redis_uptime_days": info.get("uptime_in_days", 0),
-            })
+            stats.update(
+                {
+                    "redis_connected": True,
+                    "redis_memory_used": info.get("used_memory_human", "unknown"),
+                    "redis_keys_count": cache.redis_client.dbsize(),
+                    "redis_uptime_days": info.get("uptime_in_days", 0),
+                }
+            )
         except Exception as e:
-            stats.update({
-                "redis_connected": False,
-                "redis_error": str(e)
-            })
+            stats.update({"redis_connected": False, "redis_error": str(e)})
     else:
-        stats.update({
-            "memory_cache_entries": len(cache.memory_cache),
-        })
+        stats.update(
+            {
+                "memory_cache_entries": len(cache.memory_cache),
+            }
+        )
 
     return stats
 
@@ -276,15 +275,25 @@ def warmup_cache(target_path: str = ".") -> Dict[str, Any]:
     try:
         # Warm up secrets scan
         secrets_result = scan_secrets_cached([target_path])
-        operations.append({"operation": "secrets_scan", "cached": True, "items": len(secrets_result)})
+        operations.append(
+            {"operation": "secrets_scan", "cached": True, "items": len(secrets_result)}
+        )
 
         # Warm up dependencies scan
         deps_result = scan_dependencies_cached(target_path)
-        operations.append({"operation": "deps_scan", "cached": True, "items": deps_result["count"]})
+        operations.append(
+            {"operation": "deps_scan", "cached": True, "items": deps_result["count"]}
+        )
 
         # Warm up SAST scan
         sast_result = scan_sast_cached(target_path)
-        operations.append({"operation": "sast_scan", "cached": True, "vulnerabilities": sast_result["summary"]["total_vulnerabilities"]})
+        operations.append(
+            {
+                "operation": "sast_scan",
+                "cached": True,
+                "vulnerabilities": sast_result["summary"]["total_vulnerabilities"],
+            }
+        )
 
     except Exception as e:
         logger.error(f"Cache warmup failed: {e}")
@@ -296,5 +305,5 @@ def warmup_cache(target_path: str = ".") -> Dict[str, Any]:
         "status": "success",
         "duration_seconds": round(duration, 2),
         "operations": operations,
-        "cache_stats": get_cache_stats()
+        "cache_stats": get_cache_stats(),
     }

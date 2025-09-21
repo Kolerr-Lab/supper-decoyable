@@ -1,8 +1,8 @@
+import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
-import re
 from typing import Iterable, List, Optional, Pattern, Tuple
-import sys
 
 """
 decoyable.scanners.secrets

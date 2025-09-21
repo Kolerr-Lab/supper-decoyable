@@ -1,16 +1,17 @@
 """Celery tasks for asynchronous processing in DECOYABLE."""
 
-import os
-from celery import Celery
-from typing import Dict, Any, List
 import logging
+import os
+from typing import Any, Dict, List
+
+from celery import Celery
 
 # Configure Celery
 celery_app = Celery(
     "decoyable",
     broker=os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
     backend=os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0"),
-    include=["decoyable.tasks"]
+    include=["decoyable.tasks"],
 )
 
 # Celery configuration
@@ -48,19 +49,21 @@ def scan_secrets_async(self, paths: List[str]) -> Dict[str, Any]:
 
         results = []
         for finding in all_findings:
-            results.append({
-                "filename": finding.filename,
-                "lineno": finding.lineno,
-                "secret_type": finding.secret_type,
-                "masked": finding.masked(),
-                "context": finding.context
-            })
+            results.append(
+                {
+                    "filename": finding.filename,
+                    "lineno": finding.lineno,
+                    "secret_type": finding.secret_type,
+                    "masked": finding.masked(),
+                    "context": finding.context,
+                }
+            )
 
         return {
             "status": "success",
             "findings": results,
             "count": len(results),
-            "paths_scanned": paths
+            "paths_scanned": paths,
         }
 
     except Exception as e:
@@ -75,23 +78,22 @@ def scan_dependencies_async(self, path: str) -> Dict[str, Any]:
     try:
         from decoyable.scanners import deps
 
-        self.update_state(state="PROGRESS", meta={"message": "Scanning dependencies..."})
+        self.update_state(
+            state="PROGRESS", meta={"message": "Scanning dependencies..."}
+        )
 
         missing_imports, import_mapping = deps.missing_dependencies(path)
 
         results = []
         for imp in sorted(missing_imports):
             providers = import_mapping.get(imp, [])
-            results.append({
-                "import": imp,
-                "providers": providers
-            })
+            results.append({"import": imp, "providers": providers})
 
         return {
             "status": "success",
             "missing_dependencies": results,
             "count": len(results),
-            "path_scanned": path
+            "path_scanned": path,
         }
 
     except Exception as e:
@@ -106,7 +108,9 @@ def scan_sast_async(self, path: str) -> Dict[str, Any]:
     try:
         from decoyable.scanners import sast
 
-        self.update_state(state="PROGRESS", meta={"message": "Performing SAST analysis..."})
+        self.update_state(
+            state="PROGRESS", meta={"message": "Performing SAST analysis..."}
+        )
 
         sast_results = sast.scan_sast(path)
 
@@ -114,7 +118,7 @@ def scan_sast_async(self, path: str) -> Dict[str, Any]:
             "status": "success",
             "vulnerabilities": sast_results.get("vulnerabilities", []),
             "summary": sast_results.get("summary", {}),
-            "path_scanned": path
+            "path_scanned": path,
         }
 
     except Exception as e:
@@ -127,17 +131,22 @@ def scan_sast_async(self, path: str) -> Dict[str, Any]:
 def scan_all_async(self, path: str) -> Dict[str, Any]:
     """Asynchronous task to perform all security scans."""
     try:
-        self.update_state(state="PROGRESS", meta={"message": "Starting comprehensive security scan..."})
+        self.update_state(
+            state="PROGRESS",
+            meta={"message": "Starting comprehensive security scan..."},
+        )
 
         # Run all scans in parallel using Celery's group/chord
         from celery import group
 
         # Create group of tasks
-        scan_group = group([
-            scan_secrets_async.s([path]),
-            scan_dependencies_async.s(path),
-            scan_sast_async.s(path)
-        ])
+        scan_group = group(
+            [
+                scan_secrets_async.s([path]),
+                scan_dependencies_async.s(path),
+                scan_sast_async.s(path),
+            ]
+        )
 
         # Execute group and wait for results
         group_result = scan_group.apply_async()
@@ -152,7 +161,7 @@ def scan_all_async(self, path: str) -> Dict[str, Any]:
             "dependencies": results[1] if len(results) > 1 else {},
             "sast": results[2] if len(results) > 2 else {},
             "path_scanned": path,
-            "scan_timestamp": self.request.id
+            "scan_timestamp": self.request.id,
         }
 
         return combined_result

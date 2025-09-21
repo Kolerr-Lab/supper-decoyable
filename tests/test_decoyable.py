@@ -1,13 +1,20 @@
-import pytest
-import tempfile
-import os
 import json
+import os
+import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from decoyable.scanners.deps import (
+    collect_imports_from_dir,
+    installed_packages,
+    missing_dependencies,
+)
 
 # Import DECOYABLE modules
-from decoyable.scanners.secrets import scan_file as scan_secrets_file, SecretFinding
-from decoyable.scanners.deps import collect_imports_from_dir, missing_dependencies, installed_packages
+from decoyable.scanners.secrets import SecretFinding
+from decoyable.scanners.secrets import scan_file as scan_secrets_file
 
 
 class TestSecretsScanner:
@@ -16,12 +23,14 @@ class TestSecretsScanner:
     def test_scan_file_with_no_secrets(self, tmp_path):
         """Test scanning a file with no secrets returns empty list."""
         test_file = tmp_path / "clean.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def hello_world():
     print("Hello, World!")
     api_key = "not_a_real_key"
     return "safe"
-""")
+"""
+        )
 
         findings = list(scan_secrets_file(str(test_file)))
         assert len(findings) == 0
@@ -29,10 +38,12 @@ def hello_world():
     def test_scan_file_with_aws_key(self, tmp_path):
         """Test detection of AWS Access Key ID."""
         test_file = tmp_path / "config.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 AWS_ACCESS_KEY_ID = "AKIAIOSFODNN7EXAMPLE"
 AWS_SECRET_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-""")
+"""
+        )
 
         findings = list(scan_secrets_file(str(test_file)))
         assert len(findings) >= 1
@@ -46,10 +57,12 @@ AWS_SECRET_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
         """Test detection of GitHub personal access token."""
         test_file = tmp_path / "secrets.py"
         # Use a token that matches the pattern: ghp_ followed by exactly 36 alphanumeric + underscore chars
-        test_file.write_text("""
+        test_file.write_text(
+            """
 GITHUB_TOKEN = "ghp_1234567890abcdef1234567890abcdef123"
 SLACK_TOKEN = "xoxb-1234567890-1234567890-abcdefghijklmnopqrstuvwx"
-""")
+"""
+        )
 
         findings = list(scan_secrets_file(str(test_file)))
         # At minimum, should find the Slack token
@@ -66,7 +79,7 @@ SLACK_TOKEN = "xoxb-1234567890-1234567890-abcdefghijklmnopqrstuvwx"
             lineno=10,
             secret_type="Test Key",
             match="ABCDEFGHIJK",
-            context="key = ABCDEFGHIJK"
+            context="key = ABCDEFGHIJK",
         )
 
         masked = finding.masked(keep_left=2, keep_right=2)
@@ -75,11 +88,13 @@ SLACK_TOKEN = "xoxb-1234567890-1234567890-abcdefghijklmnopqrstuvwx"
     def test_scan_file_with_context(self, tmp_path):
         """Test that findings include proper context."""
         test_file = tmp_path / "context.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 # This is a comment
 API_KEY = "AKIAIOSFODNN7EXAMPLE"
 # Another comment
-""")
+"""
+        )
 
         findings = list(scan_secrets_file(str(test_file)))
         assert len(findings) == 1
@@ -96,18 +111,22 @@ class TestDepsScanner:
     def test_collect_imports_from_dir(self, tmp_path):
         """Test collecting imports from a directory."""
         # Create test Python files
-        (tmp_path / "main.py").write_text("""
+        (tmp_path / "main.py").write_text(
+            """
 import os
 import sys
 from pathlib import Path
 from custom_module import helper
-""")
+"""
+        )
 
-        (tmp_path / "utils.py").write_text("""
+        (tmp_path / "utils.py").write_text(
+            """
 import json
 import re
 from typing import List, Dict
-""")
+"""
+        )
 
         # Create __init__.py to make it a package
         (tmp_path / "__init__.py").write_text("")
@@ -124,8 +143,11 @@ from typing import List, Dict
     def test_missing_dependencies_basic(self):
         """Test basic missing dependencies detection."""
         # Mock the function to avoid file system operations
-        with patch('decoyable.scanners.deps.missing_dependencies') as mock_missing:
-            mock_missing.return_value = ({"nonexistent_package", "another_missing"}, {"os": ["stdlib"], "nonexistent_package": []})
+        with patch("decoyable.scanners.deps.missing_dependencies") as mock_missing:
+            mock_missing.return_value = (
+                {"nonexistent_package", "another_missing"},
+                {"os": ["stdlib"], "nonexistent_package": []},
+            )
 
             # Call the actual function with a dummy path
             missing, mapping = mock_missing("dummy_path")
@@ -166,7 +188,7 @@ class TestCLITests:
         """Test that CLI help works."""
         from decoyable.core.cli import main
 
-        with patch('sys.argv', ['main.py', '--help']):
+        with patch("sys.argv", ["main.py", "--help"]):
             with pytest.raises(SystemExit):  # --help causes SystemExit
                 main()
 
@@ -175,20 +197,20 @@ class TestCLITests:
         import main
 
         # Test that the function exists
-        assert hasattr(main, 'run_scan')
+        assert hasattr(main, "run_scan")
         assert callable(main.run_scan)
 
         # Create a mock args object
         args = MagicMock()
-        args.scan_type = 'secrets'
-        args.path = '.'
-        args.format = 'text'
+        args.scan_type = "secrets"
+        args.path = "."
+        args.format = "text"
 
         # Should not raise an exception
         try:
             result = main.run_scan(args)
             assert isinstance(result, int)  # Should return exit code
-        except Exception as e:
+        except Exception:
             # If it fails due to missing dependencies or other issues, that's OK
             # We just want to make sure the function can be called
             pass
@@ -198,15 +220,15 @@ class TestCLITests:
         import main
 
         # Test that build_arg_parser exists
-        assert hasattr(main, 'build_arg_parser')
+        assert hasattr(main, "build_arg_parser")
         parser = main.build_arg_parser()
         assert parser is not None
 
         # Test parsing scan command
-        args = parser.parse_args(['scan', 'secrets', '.'])
-        assert args.command == 'scan'
-        assert args.scan_type == 'secrets'
-        assert args.path == '.'
+        args = parser.parse_args(["scan", "secrets", "."])
+        assert args.command == "scan"
+        assert args.scan_type == "secrets"
+        assert args.path == "."
 
 
 class TestAPITests:
@@ -216,7 +238,9 @@ class TestAPITests:
     def client(self):
         """Create FastAPI test client."""
         from fastapi.testclient import TestClient
+
         from decoyable.api.app import app
+
         return TestClient(app)
 
     def test_health_endpoint(self, client):
@@ -246,11 +270,13 @@ class TestAPITests:
         """Test POST /scan/dependencies endpoint."""
         # Create a test Python file with imports
         test_file = tmp_path / "test_deps.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 import os
 import sys
 import nonexistent_package
-""")
+"""
+        )
 
         payload = {"path": str(tmp_path)}
         response = client.post("/scan/dependencies", json=payload)
@@ -289,6 +315,7 @@ class TestDockerTests:
         assert compose_file.exists()
 
         import yaml
+
         with open(compose_file) as f:
             compose_data = yaml.safe_load(f)
 
@@ -296,7 +323,9 @@ class TestDockerTests:
         required_services = ["fastapi", "db", "redis", "nginx", "prometheus", "grafana"]
 
         for service in required_services:
-            assert service in services, f"Service {service} not found in docker-compose.yml"
+            assert (
+                service in services
+            ), f"Service {service} not found in docker-compose.yml"
 
     def test_dockerfile_exists(self):
         """Test that Dockerfile exists."""

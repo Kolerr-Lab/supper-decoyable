@@ -2,6 +2,7 @@ import inspect
 import tempfile
 import types
 from collections.abc import Iterable
+
 import pytest
 
 # tests/test_scanners.py
@@ -17,8 +18,6 @@ Adjust the import name if needed.
 """
 
 
-
-
 def _instantiate_with_defaults(cls):
     """
     Try to instantiate `cls` by providing reasonable defaults for required
@@ -30,14 +29,21 @@ def _instantiate_with_defaults(cls):
     for name, param in sig.parameters.items():
         if name in ("self",):
             continue
-        if param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
+        if param.kind in (
+            inspect.Parameter.VAR_POSITIONAL,
+            inspect.Parameter.VAR_KEYWORD,
+        ):
             continue
         if param.default is not inspect.Parameter.empty:
             # has a default, skip providing
             continue
         # Provide a sensible default based on annotation or name
         ann = param.annotation
-        if ann is str or "str" in (getattr(ann, "__name__", "") or "") or name.lower().startswith(("pattern", "regex", "text", "path")):
+        if (
+            ann is str
+            or "str" in (getattr(ann, "__name__", "") or "")
+            or name.lower().startswith(("pattern", "regex", "text", "path"))
+        ):
             kwargs[name] = "test"
         elif ann is int or name.lower().endswith(("timeout", "port", "count", "max")):
             kwargs[name] = 0
@@ -63,7 +69,7 @@ def _call_scan_interface(obj, text):
     Returns the raw result (may be generator/iterable/etc).
     Raises AttributeError if no candidate callables exist.
     """
-    if hasattr(obj, "scan") and callable(getattr(obj, "scan")):
+    if hasattr(obj, "scan") and callable(obj.scan):
         return obj.scan(text)
     if callable(obj):
         # class instances might be callable via __call__
@@ -77,7 +83,9 @@ def _call_scan_interface(obj, text):
 
 @pytest.mark.usefixtures("tmp_path")
 def test_scanners_module_has_scanner_classes():
-    scanners_mod = pytest.importorskip("scanners", reason="No 'scanners' module to test")
+    scanners_mod = pytest.importorskip(
+        "scanners", reason="No 'scanners' module to test"
+    )
     scanner_classes = [
         obj
         for name, obj in vars(scanners_mod).items()
@@ -102,13 +110,19 @@ def test_scanners_module_has_scanner_classes():
         except AttributeError:
             pytest.skip(f"{cls.__name__!r} has no scan/__call__ interface; skipping")
         except Exception as exc:
-            pytest.fail(f"{cls.__name__!r}.scan(...) raised an unexpected exception: {exc}")
+            pytest.fail(
+                f"{cls.__name__!r}.scan(...) raised an unexpected exception: {exc}"
+            )
 
         # The result should be an iterable (but not a plain string). Convert to list safely.
         assert result is not None, f"{cls.__name__!r}.scan returned None"
         if isinstance(result, str):
-            pytest.fail(f"{cls.__name__!r}.scan returned a plain string, expected iterable of findings")
-        assert isinstance(result, Iterable), f"{cls.__name__!r}.scan did not return an iterable"
+            pytest.fail(
+                f"{cls.__name__!r}.scan returned a plain string, expected iterable of findings"
+            )
+        assert isinstance(
+            result, Iterable
+        ), f"{cls.__name__!r}.scan did not return an iterable"
 
         # calling with empty string should not crash
         try:
@@ -119,7 +133,9 @@ def test_scanners_module_has_scanner_classes():
 
 
 def test_scan_file_method_if_present(tmp_path):
-    scanners_mod = pytest.importorskip("scanners", reason="No 'scanners' module to test")
+    scanners_mod = pytest.importorskip(
+        "scanners", reason="No 'scanners' module to test"
+    )
     scanner_classes = [
         obj
         for name, obj in vars(scanners_mod).items()
@@ -141,11 +157,11 @@ def test_scan_file_method_if_present(tmp_path):
 
         # If the instance has a 'scan_file' or 'scan_filepath' method, exercise it
         file_scan_method = None
-        if hasattr(instance, "scan_file") and callable(getattr(instance, "scan_file")):
+        if hasattr(instance, "scan_file") and callable(instance.scan_file):
             file_scan_method = instance.scan_file
-        elif hasattr(instance, "scan_filepath") and callable(getattr(instance, "scan_filepath")):
+        elif hasattr(instance, "scan_filepath") and callable(instance.scan_filepath):
             file_scan_method = instance.scan_filepath
-        elif hasattr(instance, "scan") and callable(getattr(instance, "scan")):
+        elif hasattr(instance, "scan") and callable(instance.scan):
             # Some scanners accept file paths via scan(path) as well; try if signature expects a path-like
             sig = inspect.signature(instance.scan)
             params = list(sig.parameters.values())
@@ -171,12 +187,16 @@ def test_scan_file_method_if_present(tmp_path):
 
         assert result is not None
         if isinstance(result, str):
-            pytest.fail(f"{cls.__name__!r}.scan_file returned a plain string, expected iterable")
+            pytest.fail(
+                f"{cls.__name__!r}.scan_file returned a plain string, expected iterable"
+            )
         assert isinstance(result, Iterable)
 
 
 def test_module_level_scan_functions_are_present_or_skipped():
-    scanners_mod = pytest.importorskip("scanners", reason="No 'scanners' module to test")
+    scanners_mod = pytest.importorskip(
+        "scanners", reason="No 'scanners' module to test"
+    )
     # Accept a module-level scan_text or scan function if present and test basic behavior
     for func_name in ("scan_text", "scan"):
         func = getattr(scanners_mod, func_name, None)
@@ -188,8 +208,12 @@ def test_module_level_scan_functions_are_present_or_skipped():
         try:
             res = func("simple sample text")
         except Exception as exc:
-            pytest.fail(f"Module-level {func_name} raised exception on normal input: {exc}")
+            pytest.fail(
+                f"Module-level {func_name} raised exception on normal input: {exc}"
+            )
         assert res is not None
         if isinstance(res, str):
-            pytest.fail(f"Module-level {func_name} returned a plain string, expected iterable")
+            pytest.fail(
+                f"Module-level {func_name} returned a plain string, expected iterable"
+            )
         assert isinstance(res, Iterable)

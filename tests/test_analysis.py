@@ -6,20 +6,21 @@ Tests attack classification, knowledge base, and adaptive learning.
 """
 
 import json
-import pytest
 import sqlite3
 import tempfile
-from unittest.mock import Mock, patch, AsyncMock
 from pathlib import Path
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 from fastapi.testclient import TestClient
 
 from decoyable.defense.analysis import (
-    KnowledgeBase,
     AdaptiveDefense,
-    analyze_attack_with_llm,
-    analyze_attack_patterns,
+    KnowledgeBase,
     analyze_attack_async,
-    apply_adaptive_defense
+    analyze_attack_patterns,
+    analyze_attack_with_llm,
+    apply_adaptive_defense,
 )
 
 
@@ -45,13 +46,13 @@ class TestKnowledgeBase:
             "method": "POST",
             "path": "/login",
             "ip_address": "192.168.1.100",
-            "body": "user=admin&pass=' OR '1'='1"
+            "body": "user=admin&pass=' OR '1'='1",
         }
 
         analysis_result = {
             "attack_type": "sqli",
             "confidence": 0.95,
-            "recommended_action": "block_ip"
+            "recommended_action": "block_ip",
         }
 
         # Store analysis
@@ -72,7 +73,7 @@ class TestKnowledgeBase:
             {"attack_type": "sqli", "severity": "high"},
             {"attack_type": "xss", "severity": "medium"},
             {"attack_type": "sqli", "severity": "high"},
-            {"attack_type": "reconnaissance", "severity": "low"}
+            {"attack_type": "reconnaissance", "severity": "low"},
         ]
 
         for attack in attacks:
@@ -154,7 +155,7 @@ class TestPatternAnalysis:
             "path": "/login",
             "body": "user=admin' OR '1'='1",
             "headers": {},
-            "query_params": {}
+            "query_params": {},
         }
 
         result = await analyze_attack_patterns(attack_data)
@@ -171,7 +172,7 @@ class TestPatternAnalysis:
             "path": "/search",
             "query_params": {"q": "<script>alert('xss')</script>"},
             "headers": {},
-            "body": None
+            "body": None,
         }
 
         result = await analyze_attack_patterns(attack_data)
@@ -187,7 +188,7 @@ class TestPatternAnalysis:
             "path": "/.env",
             "headers": {"User-Agent": "sqlmap/1.6"},
             "query_params": {},
-            "body": None
+            "body": None,
         }
 
         result = await analyze_attack_patterns(attack_data)
@@ -203,7 +204,7 @@ class TestPatternAnalysis:
             "path": "/health",
             "headers": {"User-Agent": "Mozilla/5.0"},
             "query_params": {},
-            "body": None
+            "body": None,
         }
 
         result = await analyze_attack_patterns(attack_data)
@@ -221,6 +222,7 @@ class TestLLMAnalysis:
     async def test_llm_analysis_success(self, mock_client_class):
         """Test successful LLM analysis."""
         import os
+
         old_key = os.environ.get("OPENAI_API_KEY")
         os.environ["OPENAI_API_KEY"] = "test-key"
 
@@ -229,25 +231,33 @@ class TestLLMAnalysis:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {
-                "choices": [{
-                    "message": {
-                        "content": json.dumps({
-                            "attack_type": "sqli",
-                            "confidence": 0.95,
-                            "recommended_action": "block_ip",
-                            "explanation": "SQL injection detected",
-                            "severity": "high",
-                            "indicators": ["UNION SELECT"]
-                        })
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "attack_type": "sqli",
+                                    "confidence": 0.95,
+                                    "recommended_action": "block_ip",
+                                    "explanation": "SQL injection detected",
+                                    "severity": "high",
+                                    "indicators": ["UNION SELECT"],
+                                }
+                            )
+                        }
                     }
-                }]
+                ]
             }
             mock_client.post.return_value = mock_response
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=None)
             mock_client_class.return_value = mock_client
 
-            attack_data = {"method": "POST", "path": "/login", "body": "user=admin' OR '1'='1"}
+            attack_data = {
+                "method": "POST",
+                "path": "/login",
+                "body": "user=admin' OR '1'='1",
+            }
             result = await analyze_attack_with_llm(attack_data)
 
             assert result["attack_type"] == "sqli"
@@ -264,6 +274,7 @@ class TestLLMAnalysis:
     async def test_llm_fallback_to_patterns(self):
         """Test LLM fallback to pattern analysis."""
         import os
+
         # Ensure no API key
         old_key = os.environ.get("OPENAI_API_KEY")
         if "OPENAI_API_KEY" in os.environ:
@@ -273,7 +284,7 @@ class TestLLMAnalysis:
             attack_data = {
                 "method": "POST",
                 "path": "/login",
-                "body": "user=admin' OR '1'='1"
+                "body": "user=admin' OR '1'='1",
             }
 
             result = await analyze_attack_with_llm(attack_data)
@@ -296,13 +307,13 @@ class TestAdaptiveDefenseApplication:
         """Test adaptive defense with high confidence attack."""
         attack_data = {
             "path": "/api/search?query=admin%27%20UNION%20SELECT%20username,password%20FROM%20users--",
-            "ip_address": "192.168.1.100"
+            "ip_address": "192.168.1.100",
         }
 
         analysis_result = {
             "attack_type": "sqli",
             "confidence": 0.9,
-            "recommended_action": "block_ip"
+            "recommended_action": "block_ip",
         }
 
         await apply_adaptive_defense(attack_data, analysis_result)
@@ -315,15 +326,12 @@ class TestAdaptiveDefenseApplication:
     @patch("decoyable.defense.analysis.adaptive_defense")
     async def test_apply_adaptive_defense_reconnaissance(self, mock_ad):
         """Test adaptive defense for reconnaissance."""
-        attack_data = {
-            "path": "/graphql",
-            "method": "GET"
-        }
+        attack_data = {"path": "/graphql", "method": "GET"}
 
         analysis_result = {
             "attack_type": "reconnaissance",
             "confidence": 0.7,
-            "recommended_action": "monitor"
+            "recommended_action": "monitor",
         }
 
         await apply_adaptive_defense(attack_data, analysis_result)
@@ -344,7 +352,7 @@ class TestAnalysisIntegration:
         mock_llm.return_value = {
             "attack_type": "sqli",
             "confidence": 0.9,
-            "recommended_action": "block_ip"
+            "recommended_action": "block_ip",
         }
 
         # Mock knowledge base
@@ -353,7 +361,7 @@ class TestAnalysisIntegration:
         attack_data = {
             "method": "POST",
             "path": "/login",
-            "ip_address": "192.168.1.100"
+            "ip_address": "192.168.1.100",
         }
 
         result = await analyze_attack_async(attack_data)
@@ -375,6 +383,7 @@ class TestAnalysisRouter:
     def setup_method(self):
         """Set up test client."""
         from fastapi import FastAPI
+
         from decoyable.defense.analysis import router
 
         app = FastAPI()
@@ -390,7 +399,7 @@ class TestAnalysisRouter:
                 "timestamp": "2025-01-01T00:00:00",
                 "attack_data": {"test": "data"},
                 "analysis_result": {"attack_type": "sqli"},
-                "feedback": None
+                "feedback": None,
             }
         ]
 
@@ -407,7 +416,7 @@ class TestAnalysisRouter:
         """Test attack statistics endpoint."""
         mock_kb.get_attack_stats.return_value = {
             "total_attacks": 10,
-            "attack_types": {"sqli": 5, "xss": 3}
+            "attack_types": {"sqli": 5, "xss": 3},
         }
 
         response = self.client.get("/analysis/stats?days=7")
@@ -423,8 +432,7 @@ class TestAnalysisRouter:
         mock_kb.update_feedback.return_value = True
 
         response = self.client.post(
-            "/analysis/feedback/123",
-            json={"feedback": "This was actually XSS"}
+            "/analysis/feedback/123", json={"feedback": "This was actually XSS"}
         )
         assert response.status_code == 200
 

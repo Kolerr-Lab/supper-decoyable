@@ -7,20 +7,20 @@ Tests fast responses, request capture, IP blocking, and alert forwarding.
 
 import asyncio
 import json
-import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from fastapi.testclient import TestClient
-from fastapi import Request
+from unittest.mock import AsyncMock, Mock, patch
+
 import httpx
+import pytest
+from fastapi import Request
+from fastapi.testclient import TestClient
 
 from decoyable.defense.honeypot import (
-    router,
-    get_client_ip,
+    block_ip,
     capture_request,
     forward_alert,
-    block_ip,
-    block_ip,
-    process_attack_async
+    get_client_ip,
+    process_attack_async,
+    router,
 )
 
 
@@ -30,6 +30,7 @@ class TestHoneypotEndpoints:
     def setup_method(self):
         """Set up test client."""
         from fastapi import FastAPI
+
         app = FastAPI()
         app.include_router(router)
         self.client = TestClient(app)
@@ -44,7 +45,7 @@ class TestHoneypotEndpoints:
             "/decoy/api/v1/users",
             "/decoy/.env",
             "/decoy/backup.sql",
-            "/decoy/config.json"
+            "/decoy/config.json",
         ]
 
         for endpoint in endpoints:
@@ -54,7 +55,9 @@ class TestHoneypotEndpoints:
 
             # Should return 200 and be reasonably fast (< 50ms in test environment)
             assert response.status_code == 200
-            assert response_time < 50, f"Response too slow: {response_time}ms for {endpoint}"
+            assert (
+                response_time < 50
+            ), f"Response too slow: {response_time}ms for {endpoint}"
 
     def test_honeypot_content_types(self):
         """Test that honeypot returns appropriate content types."""
@@ -62,7 +65,7 @@ class TestHoneypotEndpoints:
             ("/decoy/api/data.json", "application/json", "status"),
             ("/decoy/wsdl", "application/xml", "<?xml"),
             ("/decoy/admin/login", "text/html", "<html>"),
-            ("/decoy/unknown", "text/plain", "Service available")
+            ("/decoy/unknown", "text/plain", "Service available"),
         ]
 
         for endpoint, expected_type, content_check in test_cases:
@@ -117,7 +120,7 @@ class TestRequestCapture:
         request.headers = {
             "user-agent": "MaliciousBot/1.0",
             "content-type": "application/json",
-            "x-forwarded-for": "192.168.1.100"
+            "x-forwarded-for": "192.168.1.100",
         }
         request.query_params = {"action": "hack"}
         request.client = Mock()
@@ -177,6 +180,7 @@ class TestAlertForwarding:
     async def test_forward_alert_success(self, mock_client_class):
         """Test successful alert forwarding."""
         import os
+
         old_endpoint = os.environ.get("SECURITY_TEAM_ENDPOINT")
         os.environ["SECURITY_TEAM_ENDPOINT"] = "https://test-endpoint.com/alerts"
 
@@ -194,7 +198,7 @@ class TestAlertForwarding:
             mock_client.post.assert_called_once_with(
                 "https://test-endpoint.com/alerts",
                 json=test_data,
-                headers={"Content-Type": "application/json"}
+                headers={"Content-Type": "application/json"},
             )
         finally:
             if old_endpoint:
@@ -206,6 +210,7 @@ class TestAlertForwarding:
     async def test_forward_alert_no_endpoint(self):
         """Test alert forwarding when no endpoint configured."""
         import os
+
         old_endpoint = os.environ.get("SECURITY_TEAM_ENDPOINT")
         if "SECURITY_TEAM_ENDPOINT" in os.environ:
             del os.environ["SECURITY_TEAM_ENDPOINT"]
@@ -256,8 +261,9 @@ class TestAttackProcessing:
     @patch("decoyable.defense.honeypot.analyze_attack_async")
     @patch("decoyable.defense.honeypot.forward_alert")
     @patch("decoyable.defense.honeypot.block_ip")
-    async def test_process_attack_full_workflow(self, mock_block_ip, mock_forward_alert,
-                                               mock_analyze, mock_capture):
+    async def test_process_attack_full_workflow(
+        self, mock_block_ip, mock_forward_alert, mock_analyze, mock_capture
+    ):
         """Test complete attack processing workflow."""
         # Mock request
         mock_request = Mock()
@@ -272,7 +278,7 @@ class TestAttackProcessing:
         mock_analysis = {
             "attack_type": "sqli",
             "confidence": 0.9,
-            "recommended_action": "block_ip"
+            "recommended_action": "block_ip",
         }
         mock_analyze.return_value = mock_analysis
 
@@ -297,7 +303,7 @@ class TestAttackProcessing:
         mock_analysis = {
             "attack_type": "reconnaissance",
             "confidence": 0.6,
-            "recommended_action": "monitor"
+            "recommended_action": "monitor",
         }
         mock_analyze.return_value = mock_analysis
 

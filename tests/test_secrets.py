@@ -1,5 +1,6 @@
 import os
 import re
+
 import pytest
 
 # tests/test_secrets.py
@@ -53,7 +54,7 @@ def test_redact_preserves_suffix_and_masks(orig):
     if not hasattr(secrets, "redact_secret") and not hasattr(secrets, "mask_secret"):
         pytest.skip("neither redact_secret nor mask_secret present")
 
-    fn = getattr(secrets, "redact_secret", None) or getattr(secrets, "mask_secret")
+    fn = getattr(secrets, "redact_secret", None) or secrets.mask_secret
 
     redacted = fn(orig)
 
@@ -75,7 +76,7 @@ def test_looks_like_secret_detection():
     if not hasattr(secrets, "looks_like_secret") and not hasattr(secrets, "is_secret"):
         pytest.skip("no looks_like_secret / is_secret helper found")
 
-    detector = getattr(secrets, "looks_like_secret", None) or getattr(secrets, "is_secret")
+    detector = getattr(secrets, "looks_like_secret", None) or secrets.is_secret
 
     positives = [
         "AKIA1234567890ABCD",  # AWS-like

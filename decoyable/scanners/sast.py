@@ -1,16 +1,17 @@
 """Static Application Security Testing (SAST) scanner for DECOYABLE."""
 
-import re
 import ast
 import os
-from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional, Any
+import re
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 
 class VulnerabilitySeverity(Enum):
     """Severity levels for vulnerabilities."""
+
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
@@ -20,6 +21,7 @@ class VulnerabilitySeverity(Enum):
 
 class VulnerabilityType(Enum):
     """Types of vulnerabilities that can be detected."""
+
     SQL_INJECTION = "SQL_INJECTION"
     XSS = "XSS"
     COMMAND_INJECTION = "COMMAND_INJECTION"
@@ -35,6 +37,7 @@ class VulnerabilityType(Enum):
 @dataclass
 class Vulnerability:
     """Represents a security vulnerability found in code."""
+
     file_path: str
     line_number: int
     vulnerability_type: VulnerabilityType
@@ -66,9 +69,8 @@ class SASTScanner:
                 "type": VulnerabilityType.SQL_INJECTION,
                 "severity": VulnerabilitySeverity.HIGH,
                 "description": "Potential SQL injection vulnerability",
-                "recommendation": "Use parameterized queries or prepared statements"
+                "recommendation": "Use parameterized queries or prepared statements",
             },
-
             # XSS patterns
             "xss": {
                 "patterns": [
@@ -80,9 +82,8 @@ class SASTScanner:
                 "type": VulnerabilityType.XSS,
                 "severity": VulnerabilitySeverity.HIGH,
                 "description": "Potential Cross-Site Scripting (XSS) vulnerability",
-                "recommendation": "Use proper output encoding and Content Security Policy"
+                "recommendation": "Use proper output encoding and Content Security Policy",
             },
-
             # Command injection patterns
             "command_injection": {
                 "patterns": [
@@ -95,9 +96,8 @@ class SASTScanner:
                 "type": VulnerabilityType.COMMAND_INJECTION,
                 "severity": VulnerabilitySeverity.CRITICAL,
                 "description": "Potential command injection vulnerability",
-                "recommendation": "Validate and sanitize user input, use safe APIs"
+                "recommendation": "Validate and sanitize user input, use safe APIs",
             },
-
             # Path traversal patterns
             "path_traversal": {
                 "patterns": [
@@ -109,9 +109,8 @@ class SASTScanner:
                 "type": VulnerabilityType.PATH_TRAVERSAL,
                 "severity": VulnerabilitySeverity.HIGH,
                 "description": "Potential path traversal vulnerability",
-                "recommendation": "Validate paths and use safe path joining functions"
+                "recommendation": "Validate paths and use safe path joining functions",
             },
-
             # Insecure random patterns
             "insecure_random": {
                 "patterns": [
@@ -122,9 +121,8 @@ class SASTScanner:
                 "type": VulnerabilityType.INSECURE_RANDOM,
                 "severity": VulnerabilitySeverity.MEDIUM,
                 "description": "Use of insecure random number generation",
-                "recommendation": "Use secrets module for cryptographic purposes"
+                "recommendation": "Use secrets module for cryptographic purposes",
             },
-
             # Hardcoded secrets patterns
             "hardcoded_secrets": {
                 "patterns": [
@@ -137,9 +135,8 @@ class SASTScanner:
                 "type": VulnerabilityType.HARDCODED_SECRET,
                 "severity": VulnerabilitySeverity.HIGH,
                 "description": "Potential hardcoded secret or credential",
-                "recommendation": "Use environment variables or secure credential storage"
+                "recommendation": "Use environment variables or secure credential storage",
             },
-
             # Weak cryptography patterns
             "weak_crypto": {
                 "patterns": [
@@ -151,9 +148,8 @@ class SASTScanner:
                 "type": VulnerabilityType.WEAK_CRYPTO,
                 "severity": VulnerabilitySeverity.MEDIUM,
                 "description": "Use of weak or deprecated cryptographic functions",
-                "recommendation": "Use modern cryptographic algorithms like SHA-256, AES"
+                "recommendation": "Use modern cryptographic algorithms like SHA-256, AES",
             },
-
             # Deserialization patterns
             "deserialization": {
                 "patterns": [
@@ -164,9 +160,8 @@ class SASTScanner:
                 "type": VulnerabilityType.DESERIALIZATION,
                 "severity": VulnerabilitySeverity.HIGH,
                 "description": "Potential unsafe deserialization vulnerability",
-                "recommendation": "Validate input and use safe deserialization methods"
+                "recommendation": "Validate input and use safe deserialization methods",
             },
-
             # SSRF patterns
             "ssrf": {
                 "patterns": [
@@ -177,9 +172,8 @@ class SASTScanner:
                 "type": VulnerabilityType.SSRF,
                 "severity": VulnerabilitySeverity.HIGH,
                 "description": "Potential Server-Side Request Forgery (SSRF) vulnerability",
-                "recommendation": "Validate and whitelist URLs, use proper input validation"
+                "recommendation": "Validate and whitelist URLs, use proper input validation",
             },
-
             # XXE patterns
             "xxe": {
                 "patterns": [
@@ -190,8 +184,8 @@ class SASTScanner:
                 "type": VulnerabilityType.XXE,
                 "severity": VulnerabilitySeverity.MEDIUM,
                 "description": "Potential XML External Entity (XXE) vulnerability",
-                "recommendation": "Disable external entity processing in XML parsers"
-            }
+                "recommendation": "Disable external entity processing in XML parsers",
+            },
         }
 
     def scan_file(self, file_path: str) -> List[Vulnerability]:
@@ -199,19 +193,22 @@ class SASTScanner:
         vulnerabilities = []
 
         try:
-            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(file_path, encoding="utf-8", errors="ignore") as f:
                 content = f.read()
-                lines = content.split('\n')
+                lines = content.split("\n")
 
                 for line_num, line in enumerate(lines, 1):
-                    for vuln_name, vuln_config in self.vulnerability_patterns.items():
+                    for _vuln_name, vuln_config in self.vulnerability_patterns.items():
                         for pattern in vuln_config["patterns"]:
                             if re.search(pattern, line, re.IGNORECASE):
                                 # Get code snippet (current line +/- 2 lines)
                                 start_line = max(0, line_num - 3)
                                 end_line = min(len(lines), line_num + 2)
                                 snippet_lines = lines[start_line:end_line]
-                                snippet = '\n'.join(f"{i+start_line+1:4d}: {line}" for i, line in enumerate(snippet_lines))
+                                snippet = "\n".join(
+                                    f"{i+start_line+1:4d}: {line}"
+                                    for i, line in enumerate(snippet_lines)
+                                )
 
                                 vulnerability = Vulnerability(
                                     file_path=file_path,
@@ -220,7 +217,7 @@ class SASTScanner:
                                     severity=vuln_config["severity"],
                                     description=vuln_config["description"],
                                     code_snippet=snippet,
-                                    recommendation=vuln_config["recommendation"]
+                                    recommendation=vuln_config["recommendation"],
                                 )
                                 vulnerabilities.append(vulnerability)
                                 break  # Only report once per line per vulnerability type
@@ -230,35 +227,42 @@ class SASTScanner:
 
         return vulnerabilities
 
-    def scan_directory(self, directory_path: str, extensions: Optional[List[str]] = None) -> List[Vulnerability]:
+    def scan_directory(
+        self, directory_path: str, extensions: Optional[List[str]] = None
+    ) -> List[Vulnerability]:
         """Scan a directory recursively for vulnerabilities."""
         if extensions is None:
-            extensions = ['.py', '.js', '.ts', '.java', '.php', '.rb', '.go', '.rs']
+            extensions = [".py", ".js", ".ts", ".java", ".php", ".rb", ".go", ".rs"]
 
         vulnerabilities = []
         directory = Path(directory_path)
 
-        for file_path in directory.rglob('*'):
+        for file_path in directory.rglob("*"):
             if file_path.is_file() and file_path.suffix.lower() in extensions:
                 file_vulnerabilities = self.scan_file(str(file_path))
                 vulnerabilities.extend(file_vulnerabilities)
 
         return vulnerabilities
 
-    def scan_code_string(self, code: str, file_path: str = "<string>") -> List[Vulnerability]:
+    def scan_code_string(
+        self, code: str, file_path: str = "<string>"
+    ) -> List[Vulnerability]:
         """Scan a code string for vulnerabilities."""
         vulnerabilities = []
-        lines = code.split('\n')
+        lines = code.split("\n")
 
         for line_num, line in enumerate(lines, 1):
-            for vuln_name, vuln_config in self.vulnerability_patterns.items():
+            for _vuln_name, vuln_config in self.vulnerability_patterns.items():
                 for pattern in vuln_config["patterns"]:
                     if re.search(pattern, line, re.IGNORECASE):
                         # Get code snippet
                         start_line = max(0, line_num - 3)
                         end_line = min(len(lines), line_num + 2)
                         snippet_lines = lines[start_line:end_line]
-                        snippet = '\n'.join(f"{i+start_line+1:4d}: {line}" for i, line in enumerate(snippet_lines))
+                        snippet = "\n".join(
+                            f"{i+start_line+1:4d}: {line}"
+                            for i, line in enumerate(snippet_lines)
+                        )
 
                         vulnerability = Vulnerability(
                             file_path=file_path,
@@ -267,7 +271,7 @@ class SASTScanner:
                             severity=vuln_config["severity"],
                             description=vuln_config["description"],
                             code_snippet=snippet,
-                            recommendation=vuln_config["recommendation"]
+                            recommendation=vuln_config["recommendation"],
                         )
                         vulnerabilities.append(vulnerability)
                         break
@@ -289,13 +293,17 @@ def scan_sast(path: str) -> Dict[str, Any]:
     # Group vulnerabilities by severity
     severity_counts = {}
     for vuln in vulnerabilities:
-        severity_counts[vuln.severity.value] = severity_counts.get(vuln.severity.value, 0) + 1
+        severity_counts[vuln.severity.value] = (
+            severity_counts.get(vuln.severity.value, 0) + 1
+        )
 
     return {
         "vulnerabilities": [vars(vuln) for vuln in vulnerabilities],
         "summary": {
             "total_vulnerabilities": len(vulnerabilities),
             "severity_breakdown": severity_counts,
-            "files_scanned": len(set(v.file_path for v in vulnerabilities)) if vulnerabilities else 0
-        }
+            "files_scanned": (
+                len({v.file_path for v in vulnerabilities}) if vulnerabilities else 0
+            ),
+        },
     }
