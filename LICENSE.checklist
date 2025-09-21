@@ -1,0 +1,45 @@
+# License checklist — what to check and update to "master" /LICENSE
+
+1. Choose a license
+    - Pick one that matches goals (permissive: MIT/BSD, copyleft: GPL, business-friendly: Apache‑2.0).
+    - Use https://choosealicense.com for quick comparison.
+
+2. Create /LICENSE
+    - Put the full canonical license text in the file (copy from choosealicense or SPDX).
+    - Add copyright line (year, owner) where required.
+
+3. Update README
+    - Add a short license statement and link to /LICENSE.
+    - Add a badge (example):
+      - [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+    - Example short sentence: “Licensed under the MIT License — see LICENSE for details.”
+
+4. Update project metadata
+    - package.json: "license": "MIT"
+    - pyproject.toml / setup.cfg: license = "MIT"
+    - Cargo.toml, composer.json, pom.xml, etc. — set license field.
+
+5. Add related repository files (if applicable)
+    - CONTRIBUTING.md
+    - CODE_OF_CONDUCT.md
+    - SECURITY.md
+    - NOTICE (attribution obligations)
+    - AUTHORS or CONTRIBUTORS
+
+6. Add headers and distribution metadata
+    - Optionally add short SPDX headers to source files (e.g., // SPDX-License-Identifier: MIT).
+    - Add license label/labeling in Dockerfile and build manifests.
+
+7. Validate license choices and compatibility
+    - Scan dependencies for incompatible licenses (tools: licensee, license-checker, pip-licenses).
+    - Ensure third‑party attributions/NOTICE requirements are satisfied.
+
+8. CI / repo settings
+    - Commit LICENSE and push.
+    - On GitHub set repository license (automatically detected when LICENSE present).
+    - Ensure release and packaging pipelines include license metadata.
+
+9. Verify
+    - Use automated tools (licensee, FOSSology, ORT) to confirm correctness and completeness.
+
+If you want, specify the license you prefer (MIT, Apache‑2.0, GPL‑3.0, etc.) and I will generate the canonical LICENSE text and a suggested README snippet to include.
