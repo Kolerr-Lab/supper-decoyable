@@ -18,11 +18,15 @@ import httpx
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from decoyable.llm import LLMRouter, ProviderConfig, create_multi_provider_router, create_default_router
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
 # Environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 KNOWLEDGE_DB_PATH = os.getenv("KNOWLEDGE_DB_PATH", "decoyable_knowledge.db")
 
 # Attack classification patterns (improved specificity)
@@ -259,10 +263,33 @@ class KnowledgeBase:
 # Global knowledge base instance
 knowledge_base = KnowledgeBase()
 
+# Global LLM router instance
+_llm_router: Optional[LLMRouter] = None
+
+
+def get_llm_router() -> LLMRouter:
+    """Get or create the global LLM router instance."""
+    global _llm_router
+
+    if _llm_router is None:
+        try:
+            _llm_router = create_multi_provider_router()
+            logger.info("Initialized LLM router with multi-provider support")
+        except ValueError:
+            # Fallback to default router if multi-provider fails
+            try:
+                _llm_router = create_default_router()
+                logger.info("Initialized LLM router with default OpenAI provider")
+            except ValueError:
+                logger.warning("No LLM providers configured, LLM analysis will be unavailable")
+                raise RuntimeError("No LLM providers available")
+
+    return _llm_router
+
 
 async def analyze_attack_with_llm(attack_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Analyze attack using OpenAI LLM.
+    Analyze attack using LLM with smart routing and failover.
 
     Args:
         attack_data: Attack log data
@@ -270,8 +297,11 @@ async def analyze_attack_with_llm(attack_data: Dict[str, Any]) -> Dict[str, Any]
     Returns:
         Analysis result with attack_type, confidence, recommended_action
     """
-    if not OPENAI_API_KEY:
-        # Fallback to pattern-based analysis
+    try:
+        router = get_llm_router()
+    except RuntimeError:
+        # No LLM providers available, fallback to pattern-based analysis
+        logger.info("No LLM providers available, using pattern-based analysis")
         return await analyze_attack_patterns(attack_data)
 
     try:
@@ -297,35 +327,22 @@ Classify the attack type and provide:
 JSON Response:
 """
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENAI_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "gpt-3.5-turbo",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 500,
-                    "temperature": 0.1,
-                },
-            )
+        response, provider_used = await router.generate_completion(
+            prompt,
+            max_tokens=500,
+            temperature=0.1
+        )
 
-            if response.status_code == 200:
-                result = response.json()
-                content = result["choices"][0]["message"]["content"]
+        logger.debug(f"LLM analysis completed using provider: {provider_used}")
 
-                # Parse JSON response
-                try:
-                    analysis = json.loads(content)
-                    return analysis
-                except json.JSONDecodeError:
-                    logger.error(f"Failed to parse LLM response: {content}")
-                    return await analyze_attack_patterns(attack_data)
-            else:
-                logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
-                return await analyze_attack_patterns(attack_data)
+        # Parse JSON response
+        try:
+            content = response["choices"][0]["message"]["content"]
+            analysis = json.loads(content)
+            return analysis
+        except (KeyError, json.JSONDecodeError) as e:
+            logger.error(f"Failed to parse LLM response: {e}")
+            return await analyze_attack_patterns(attack_data)
 
     except Exception as exc:
         logger.error(f"LLM analysis failed: {exc}")
@@ -548,6 +565,28 @@ async def add_feedback(attack_id: int, feedback_data: Dict[str, str]) -> Dict[st
         return {"success": success, "attack_id": attack_id}
     except Exception as exc:
         logger.error(f"Failed to add feedback: {exc}")
+        return {"error": str(exc)}
+
+
+@router.get("/llm-status")
+async def get_llm_status() -> Dict[str, Any]:
+    """Get LLM router and provider status."""
+    try:
+        router = get_llm_router()
+        status = router.get_provider_status()
+        return {
+            "router_status": "active",
+            "providers": status,
+            "routing_strategy": router.routing_strategy.__class__.__name__
+        }
+    except RuntimeError as e:
+        return {
+            "router_status": "inactive",
+            "error": str(e),
+            "providers": {}
+        }
+    except Exception as exc:
+        logger.error(f"Failed to get LLM status: {exc}")
         return {"error": str(exc)}
 
 

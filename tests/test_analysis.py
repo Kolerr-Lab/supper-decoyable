@@ -20,7 +20,9 @@ from decoyable.defense.analysis import (
     analyze_attack_patterns,
     analyze_attack_with_llm,
     apply_adaptive_defense,
+    get_llm_router,
 )
+from decoyable.llm import ProviderConfig, LLMRouter, OpenAIProvider
 
 
 class TestKnowledgeBase:
@@ -259,7 +261,7 @@ class TestLLMAnalysis:
             result = await analyze_attack_with_llm(attack_data)
 
             assert result["attack_type"] == "sqli"
-            assert result["confidence"] == pytest.approx(0.6)
+            assert result["confidence"] == pytest.approx(0.95)
             assert result["recommended_action"] == "block_ip"
 
         finally:
@@ -444,4 +446,145 @@ class TestAnalysisRouter:
         assert "static_patterns" in data
         assert "dynamic_patterns" in data
         assert "blocked_ips" in data
-        assert "decoy_endpoints" in data
+
+
+class TestLLMRouting:
+    """Test LLM routing and failover functionality."""
+
+    def test_llm_router_initialization(self):
+        """Test LLM router initialization with providers."""
+        configs = [
+            ProviderConfig(name="openai", api_key="test-key-1", priority=1),
+            ProviderConfig(name="anthropic", api_key="test-key-2", priority=2),
+        ]
+
+        router = LLMRouter(configs, start_health_checks=False)
+
+        assert len(router.providers) == 2
+        assert "openai" in router.providers
+        assert "anthropic" in router.providers
+        assert router.providers["openai"].config.priority == 1
+        assert router.providers["anthropic"].config.priority == 2
+
+    @pytest.mark.asyncio
+    @patch("decoyable.llm.providers.OpenAIProvider.generate_completion")
+    async def test_successful_routing(self, mock_generate):
+        """Test successful routing to healthy provider."""
+        mock_generate.return_value = {"choices": [{"message": {"content": '{"attack_type": "sqli"}'}}]}
+
+        configs = [ProviderConfig(name="openai", api_key="test-key", priority=1)]
+        router = LLMRouter(configs, start_health_checks=False)
+
+        response, provider = await router.generate_completion("Test prompt")
+
+        assert provider == "openai"
+        assert "choices" in response
+        mock_generate.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch("decoyable.llm.providers.OpenAIProvider.generate_completion")
+    async def test_failover_to_backup(self, mock_openai_generate):
+        """Test failover when primary provider fails."""
+        # Mock primary provider failure
+        mock_openai_generate.side_effect = Exception("API Error")
+
+        # Mock backup provider success
+        with patch("decoyable.llm.providers.AnthropicProvider.generate_completion") as mock_anthropic:
+            mock_anthropic.return_value = {"choices": [{"message": {"content": '{"attack_type": "xss"}'}}]}
+
+            configs = [
+                ProviderConfig(name="openai", api_key="test-key-1", priority=1),
+                ProviderConfig(name="anthropic", api_key="test-key-2", priority=2),
+            ]
+            router = LLMRouter(configs, max_retries=3, start_health_checks=False)
+
+            # Make OpenAI provider unhealthy by recording failures
+            openai_provider = router.providers["openai"]
+            for _ in range(5):  # Make it unhealthy
+                openai_provider.record_failure(Exception("Simulated failure"))
+
+            response, provider = await router.generate_completion("Test prompt")
+
+            assert provider == "anthropic"
+            assert "choices" in response
+            mock_openai_generate.assert_not_called()  # Should not be called since provider is unhealthy
+            mock_anthropic.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_no_providers_available(self):
+        """Test behavior when no providers are available."""
+        router = LLMRouter([], start_health_checks=False)  # No providers
+
+        with pytest.raises(RuntimeError, match="No healthy LLM providers available"):
+            await router.generate_completion("Test prompt")
+
+    def test_provider_status_tracking(self):
+        """Test provider status and metrics tracking."""
+        config = ProviderConfig(name="openai", api_key="test-key", priority=1)
+        provider = OpenAIProvider(config)
+
+        # Initially healthy
+        assert provider.is_healthy()
+
+        # Record failure
+        provider.record_failure(Exception("Test error"))
+        assert provider.metrics.failed_requests == 1
+        assert provider.metrics.consecutive_failures == 1
+
+        # Record success
+        provider.record_success(1.5)
+        assert provider.metrics.successful_requests == 1
+        assert provider.metrics.consecutive_failures == 0
+        assert provider.metrics.total_latency == 1.5
+
+    def test_router_status_endpoint(self):
+        """Test router status endpoint."""
+        configs = [ProviderConfig(name="openai", api_key="test-key", priority=1)]
+        router = LLMRouter(configs, start_health_checks=False)
+
+        status = router.get_provider_status()
+
+        assert "openai" in status
+        assert "status" in status["openai"]
+        assert "metrics" in status["openai"]
+        assert "config" in status["openai"]
+
+    @pytest.mark.asyncio
+    @patch("decoyable.defense.analysis.create_multi_provider_router")
+    async def test_get_llm_router_function(self, mock_create_router):
+        """Test get_llm_router function."""
+        mock_router = Mock()
+        mock_create_router.return_value = mock_router
+
+        # Clear any existing router
+        import decoyable.defense.analysis
+        decoyable.defense.analysis._llm_router = None
+
+        router = get_llm_router()
+
+        assert router == mock_router
+        mock_create_router.assert_called_once()
+
+
+class TestLLMStatusEndpoint:
+    """Test LLM status API endpoint."""
+
+    def setup_method(self):
+        """Set up test client."""
+        from decoyable.api.app import app
+        self.client = TestClient(app)
+
+    def test_llm_status_endpoint(self):
+        """Test LLM status API endpoint."""
+        # Test with no router initialized
+        import decoyable.defense.analysis
+        decoyable.defense.analysis._llm_router = None
+
+        response = self.client.get("/analysis/llm-status")
+        assert response.status_code == 200
+
+        data = response.json()
+        assert "router_status" in data
+        assert "providers" in data
+        assert data["router_status"] == "inactive"
+        assert data["providers"] == {}

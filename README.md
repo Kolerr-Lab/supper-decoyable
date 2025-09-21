@@ -6,7 +6,7 @@ A comprehensive cybersecurity platform featuring passive scanning and **active d
 
 DECOYABLE has evolved from a passive scanning tool into a **next-generation active defense framework**:
 
-- 🤖 **AI-Powered Attack Analysis**: LLM-driven classification of cyber attacks
+- 🤖 **AI-Powered Attack Analysis**: Multi-provider LLM classification with smart failover
 - 🕵️ **Adaptive Honeypots**: Dynamic decoy endpoints that learn from attacker behavior
 - 🔒 **Zero-Trust Architecture**: Containerized security with comprehensive CI/CD pipeline
 - 🚫 **Immediate IP Blocking**: Automatic attacker containment with iptables rules
@@ -24,7 +24,9 @@ DECOYABLE combines traditional security scanning with cutting-edge active defens
 
 ### Active Cyber Defense
 - **🎯 Honeypot Endpoints**: Fast-responding decoy services on isolated ports
-- **🧠 LLM Analysis**: OpenAI GPT-powered attack classification
+- **🧠 Multi-Provider LLM Analysis**: OpenAI GPT, Anthropic Claude, Google Gemini with automatic failover
+- **🔄 Smart Routing Engine**: Priority-based routing with health checks and circuit breakers
+- **📈 Performance Monitoring**: Real-time metrics and provider status tracking
 - **🔄 Adaptive Learning**: Dynamic rule updates based on attack patterns
 - **🚨 Real-time Alerts**: SOC/SIEM integration for immediate response
 
@@ -109,7 +111,9 @@ DECOY_PORTS=9001,2222,8080,8443    # Ports for honeypot services
 SECURITY_TEAM_ENDPOINT=https://your-soc.com/api/alerts
 
 # AI Analysis (Optional)
-OPENAI_API_KEY=your-api-key-here    # For LLM analysis
+OPENAI_API_KEY=your-api-key-here    # For LLM analysis (primary)
+ANTHROPIC_API_KEY=your-api-key-here   # For LLM analysis (secondary)
+GOOGLE_API_KEY=your-api-key-here      # For LLM analysis (tertiary)
 
 # Knowledge Base
 KNOWLEDGE_DB_PATH=decoyable_knowledge.db
@@ -156,6 +160,26 @@ Every captured request gets **LLM analysis**:
   "severity": "high",
   "indicators": ["password=admin", "password=123456"]
 }
+```
+
+### Multi-Provider LLM Routing
+
+**Smart failover and load balancing** across multiple LLM providers:
+
+- **🔄 Automatic Failover**: Switches providers when one fails or hits rate limits
+- **⚡ Performance Optimization**: Routes to fastest available provider
+- **🛡️ Circuit Breaker**: Temporarily disables unhealthy providers
+- **📊 Real-time Monitoring**: Provider health and performance metrics
+- **🔧 Configurable Priority**: Set primary, secondary, and tertiary providers
+
+**Supported Providers:**
+- **OpenAI GPT** (Primary - gpt-3.5-turbo, gpt-4)
+- **Anthropic Claude** (Secondary - claude-3-haiku, claude-3-sonnet)
+- **Google Gemini** (Tertiary - gemini-pro, gemini-pro-vision)
+
+**API Endpoint for Monitoring:**
+```bash
+curl http://localhost:8000/analysis/llm-status
 ```
 
 ### Adaptive Learning
