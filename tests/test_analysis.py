@@ -13,13 +13,15 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from fastapi.testclient import TestClient
 
+from decoyable.defense.adaptive_defense import AdaptiveDefense
 from decoyable.defense.analysis import (
-    AdaptiveDefense,
-    KnowledgeBase,
     analyze_attack_async,
+    apply_adaptive_defense,
+)
+from decoyable.defense.knowledge_base import KnowledgeBase
+from decoyable.defense.llm_analysis import (
     analyze_attack_patterns,
     analyze_attack_with_llm,
-    apply_adaptive_defense,
     get_llm_router,
 )
 from decoyable.llm import ProviderConfig, LLMRouter, OpenAIProvider
@@ -550,15 +552,15 @@ class TestLLMRouting:
         assert "config" in status["openai"]
 
     @pytest.mark.asyncio
-    @patch("decoyable.defense.analysis.create_multi_provider_router")
+    @patch("decoyable.defense.llm_analysis.create_multi_provider_router")
     async def test_get_llm_router_function(self, mock_create_router):
         """Test get_llm_router function."""
         mock_router = Mock()
         mock_create_router.return_value = mock_router
 
         # Clear any existing router
-        import decoyable.defense.analysis
-        decoyable.defense.analysis._llm_router = None
+        import decoyable.defense.llm_analysis
+        decoyable.defense.llm_analysis._llm_router = None
 
         router = get_llm_router()
 
@@ -577,8 +579,8 @@ class TestLLMStatusEndpoint:
     def test_llm_status_endpoint(self):
         """Test LLM status API endpoint."""
         # Test with no router initialized
-        import decoyable.defense.analysis
-        decoyable.defense.analysis._llm_router = None
+        import decoyable.defense.llm_analysis
+        decoyable.defense.llm_analysis._llm_router = None
 
         response = self.client.get("/analysis/llm-status")
         assert response.status_code == 200

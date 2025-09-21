@@ -11,7 +11,9 @@ import random
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
-from .providers import LLMProvider, ProviderConfig, ProviderStatus, create_provider
+from .base import LLMProvider, ProviderConfig, ProviderStatus
+from . import factory as provider_factory
+create_provider = provider_factory.create_provider
 
 logger = logging.getLogger(__name__)
 
@@ -181,35 +183,26 @@ class LLMRouter:
             }
         return status
 
-    async def generate_completion(self,
-                                prompt: str,
-                                provider_name: Optional[str] = None,
-                                **kwargs) -> Tuple[Dict[str, Any], str]:
-        """
-        Generate completion using smart routing.
+    async def _generate_with_specific_provider(self,
+                                             prompt: str,
+                                             provider_name: str,
+                                             **kwargs) -> Tuple[Dict[str, Any], str]:
+        """Generate completion using a specific provider."""
+        provider = self.providers[provider_name]
+        if not provider.is_healthy() or not provider.should_attempt_request():
+            raise ValueError(f"Requested provider {provider_name} is not available")
 
-        Args:
-            prompt: The prompt to send to the LLM
-            provider_name: Optional specific provider to use
-            **kwargs: Additional arguments for the LLM
+        try:
+            response = await provider.generate_completion(prompt, **kwargs)
+            return response, provider_name
+        except Exception as e:
+            logger.error(f"Specific provider {provider_name} failed: {e}")
+            raise
 
-        Returns:
-            Tuple of (response_dict, provider_name_used)
-        """
-        if provider_name and provider_name in self.providers:
-            # Use specific provider
-            provider = self.providers[provider_name]
-            if not provider.is_healthy() or not provider.should_attempt_request():
-                raise ValueError(f"Requested provider {provider_name} is not available")
-
-            try:
-                response = await provider.generate_completion(prompt, **kwargs)
-                return response, provider_name
-            except Exception as e:
-                logger.error(f"Specific provider {provider_name} failed: {e}")
-                raise
-
-        # Use routing strategy
+    async def _generate_with_routing(self,
+                                   prompt: str,
+                                   **kwargs) -> Tuple[Dict[str, Any], str]:
+        """Generate completion using routing strategy with retries."""
         for attempt in range(self.max_retries):
             provider = self.routing_strategy.select_provider(list(self.providers.values()))
 
@@ -232,6 +225,26 @@ class LLMRouter:
                     await asyncio.sleep(self.retry_delay * (2 ** attempt))  # Exponential backoff
 
         raise RuntimeError(f"All LLM providers failed after {self.max_retries} attempts")
+
+    async def generate_completion(self,
+                                prompt: str,
+                                provider_name: Optional[str] = None,
+                                **kwargs) -> Tuple[Dict[str, Any], str]:
+        """
+        Generate completion using smart routing.
+
+        Args:
+            prompt: The prompt to send to the LLM
+            provider_name: Optional specific provider to use
+            **kwargs: Additional arguments for the LLM
+
+        Returns:
+            Tuple of (response_dict, provider_name_used)
+        """
+        if provider_name and provider_name in self.providers:
+            return await self._generate_with_specific_provider(prompt, provider_name, **kwargs)
+        else:
+            return await self._generate_with_routing(prompt, **kwargs)
 
     def enable_provider(self, provider_name: str):
         """Enable a provider."""
