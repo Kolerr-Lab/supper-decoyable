@@ -320,7 +320,7 @@ class TestDockerTests:
 
     def test_dockerfile_exists(self):
         """Test that Dockerfile exists."""
-        dockerfile = Path("docker/Dockerfile")
+        dockerfile = Path("Dockerfile")
         assert dockerfile.exists()
 
     def test_requirements_file(self):
