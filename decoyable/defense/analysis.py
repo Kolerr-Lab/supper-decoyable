@@ -174,9 +174,7 @@ class KnowledgeBase:
             """
             )
 
-    def store_analysis(
-        self, attack_data: Dict[str, Any], analysis_result: Dict[str, Any]
-    ) -> int:
+    def store_analysis(self, attack_data: Dict[str, Any], analysis_result: Dict[str, Any]) -> int:
         """Store attack analysis in knowledge base."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute(
@@ -326,9 +324,7 @@ JSON Response:
                     logger.error(f"Failed to parse LLM response: {content}")
                     return await analyze_attack_patterns(attack_data)
             else:
-                logger.error(
-                    f"OpenAI API error: {response.status_code} - {response.text}"
-                )
+                logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
                 return await analyze_attack_patterns(attack_data)
 
     except Exception as exc:
@@ -467,9 +463,7 @@ async def analyze_attack_async(attack_data: Dict[str, Any]) -> Dict[str, Any]:
     return analysis_result
 
 
-async def apply_adaptive_defense(
-    attack_data: Dict[str, Any], analysis_result: Dict[str, Any]
-) -> None:
+async def apply_adaptive_defense(attack_data: Dict[str, Any], analysis_result: Dict[str, Any]) -> None:
     """
     Apply adaptive defense based on analysis results.
 

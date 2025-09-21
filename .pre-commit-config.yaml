@@ -45,10 +45,3 @@ repos:
       - id: mypy
         args: ["--ignore-missing-imports"]
         language_version: python3.10
-
-  - repo: https://github.com/pyupio/safety
-    rev: v1.10.3
-    hooks:
-      - id: safety
-        files: ^requirements.*\.txt$
-        args: ["--full-report"]

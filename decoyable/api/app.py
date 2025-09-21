@@ -40,12 +40,7 @@ class ScanRequest(BaseModel):
             raise ValueError("Path cannot be empty")
 
         # Prevent path traversal attacks
-        if (
-            ".." in v
-            or v.startswith("/etc")
-            or v.startswith("/proc")
-            or v.startswith("/sys")
-        ):
+        if ".." in v or v.startswith("/etc") or v.startswith("/proc") or v.startswith("/sys"):
             raise ValueError("Invalid path: potential security risk")
 
         # Convert to absolute path and validate
@@ -259,9 +254,7 @@ def create_app() -> FastAPI:
             logger.exception("Error starting async secrets scan")
             raise HTTPException(status_code=500, detail=str(e)) from e
 
-    @app.post(
-        "/scan/async/dependencies", summary="Asynchronously scan for dependency issues"
-    )
+    @app.post("/scan/async/dependencies", summary="Asynchronously scan for dependency issues")
     async def scan_dependencies_async(request: ScanRequest) -> dict:
         """Asynchronously scan a project for dependency issues using Celery."""
         try:
@@ -362,9 +355,7 @@ def create_app() -> FastAPI:
 
             return {
                 "status": "success" if success else "error",
-                "message": (
-                    "Cache cleared successfully" if success else "Failed to clear cache"
-                ),
+                "message": ("Cache cleared successfully" if success else "Failed to clear cache"),
             }
         except Exception as e:
             logger.exception("Error clearing cache")
@@ -385,9 +376,7 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.get("/database/results", summary="Get scan results history")
-    async def get_scan_results(
-        scan_type: Optional[str] = None, limit: int = 50
-    ) -> dict:
+    async def get_scan_results(scan_type: Optional[str] = None, limit: int = 50) -> dict:
         """Get historical scan results from database."""
         try:
             from decoyable.database import get_scan_results
@@ -414,9 +403,7 @@ def create_app() -> FastAPI:
             }
         except Exception as e:
             logger.exception("Error cleaning up database")
-            raise HTTPException(
-                status_code=500, detail=str(e)
-            ) from e  # Generic exception handler to return JSON
+            raise HTTPException(status_code=500, detail=str(e)) from e  # Generic exception handler to return JSON
 
     @app.exception_handler(Exception)
     async def generic_exception_handler(request: Request, exc: Exception):
@@ -483,9 +470,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8000, help="Port to bind to")
     parser.add_argument("--ssl-cert", help="Path to SSL certificate file")
     parser.add_argument("--ssl-key", help="Path to SSL private key file")
-    parser.add_argument(
-        "--reload", action="store_true", help="Enable auto-reload for development"
-    )
+    parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
 
     args = parser.parse_args()
 

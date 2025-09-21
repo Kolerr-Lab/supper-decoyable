@@ -1,5 +1,5 @@
 # requirements.txt
-# Pinned dependencies for CI stability
+# Pinned dependencies for CI stability - compatible versions
 
 fastapi==0.104.1
 uvicorn[standard]==0.24.0

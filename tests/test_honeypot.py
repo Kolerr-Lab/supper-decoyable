@@ -52,9 +52,7 @@ class TestHoneypotEndpoints:
 
             # Should return 200 and be reasonably fast (< 50ms in test environment)
             assert response.status_code == 200
-            assert (
-                response_time < 50
-            ), f"Response too slow: {response_time}ms for {endpoint}"
+            assert response_time < 50, f"Response too slow: {response_time}ms for {endpoint}"
 
     def test_honeypot_content_types(self):
         """Test that honeypot returns appropriate content types."""
@@ -258,9 +256,7 @@ class TestAttackProcessing:
     @patch("decoyable.defense.honeypot.analyze_attack_async")
     @patch("decoyable.defense.honeypot.forward_alert")
     @patch("decoyable.defense.honeypot.block_ip")
-    async def test_process_attack_full_workflow(
-        self, mock_block_ip, mock_forward_alert, mock_analyze, mock_capture
-    ):
+    async def test_process_attack_full_workflow(self, mock_block_ip, mock_forward_alert, mock_analyze, mock_capture):
         """Test complete attack processing workflow."""
         # Mock request
         mock_request = Mock()

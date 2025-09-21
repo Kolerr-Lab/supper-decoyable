@@ -78,9 +78,7 @@ def scan_dependencies_async(self, path: str) -> Dict[str, Any]:
     try:
         from decoyable.scanners import deps
 
-        self.update_state(
-            state="PROGRESS", meta={"message": "Scanning dependencies..."}
-        )
+        self.update_state(state="PROGRESS", meta={"message": "Scanning dependencies..."})
 
         missing_imports, import_mapping = deps.missing_dependencies(path)
 
@@ -108,9 +106,7 @@ def scan_sast_async(self, path: str) -> Dict[str, Any]:
     try:
         from decoyable.scanners import sast
 
-        self.update_state(
-            state="PROGRESS", meta={"message": "Performing SAST analysis..."}
-        )
+        self.update_state(state="PROGRESS", meta={"message": "Performing SAST analysis..."})
 
         sast_results = sast.scan_sast(path)
 

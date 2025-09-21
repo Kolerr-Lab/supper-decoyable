@@ -39,13 +39,9 @@ __all__ = [
 ]
 
 
-def find_python_files(
-    root: str, ignore_dirs: Iterable[str] | None = None
-) -> list[str]:
+def find_python_files(root: str, ignore_dirs: Iterable[str] | None = None) -> list[str]:
     """Recursively find .py files under root, skipping common virtualenv/build dirs."""
-    ignore_dirs = set(
-        ignore_dirs or {"venv", ".venv", "__pycache__", "build", "dist", ".git"}
-    )
+    ignore_dirs = set(ignore_dirs or {"venv", ".venv", "__pycache__", "build", "dist", ".git"})
     files = []
     for dirpath, dirnames, filenames in os.walk(root):
         # modify dirnames in-place to skip ignored dirs
@@ -78,9 +74,7 @@ def extract_imports_from_file(path: str) -> set[str]:
     return imports
 
 
-def collect_imports_from_dir(
-    root: str, ignore_dirs: Iterable[str] | None = None
-) -> set[str]:
+def collect_imports_from_dir(root: str, ignore_dirs: Iterable[str] | None = None) -> set[str]:
     """Scan a directory and return a set of imported top-level modules."""
     files = find_python_files(root, ignore_dirs=ignore_dirs)
     imports: set[str] = set()
@@ -268,14 +262,10 @@ def write_requirements(packages: Iterable[str], output_path: str) -> None:
 def _main_cli(argv: list[str] | None = None) -> int:
     argv = argv or sys.argv[1:]
 
-    ap = argparse.ArgumentParser(
-        description="Scan a Python project for imports and missing deps."
-    )
+    ap = argparse.ArgumentParser(description="Scan a Python project for imports and missing deps.")
     ap.add_argument("project_root", nargs="?", default=".", help="Project root to scan")
     ap.add_argument("--requirements", "-r", help="requirements.txt path to consider")
-    ap.add_argument(
-        "--write", "-w", help="write missing packages (heuristic) to this file"
-    )
+    ap.add_argument("--write", "-w", help="write missing packages (heuristic) to this file")
     args = ap.parse_args(argv)
 
     missing, mapping = missing_dependencies(args.project_root, args.requirements)
@@ -285,9 +275,7 @@ def _main_cli(argv: list[str] | None = None) -> int:
         print("Missing imports (heuristic):")
         for imp in sorted(missing):
             providers = mapping.get(imp) or []
-            print(
-                f"  {imp} -> suggestions: {', '.join(providers) or '<no suggestion>'}"
-            )
+            print(f"  {imp} -> suggestions: {', '.join(providers) or '<no suggestion>'}")
         if args.write:
             # flatten suggestions: pick first suggestion or the import name itself
             chosen = []

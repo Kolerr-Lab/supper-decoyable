@@ -429,9 +429,7 @@ class TestAnalysisRouter:
         """Test feedback update endpoint."""
         mock_kb.update_feedback.return_value = True
 
-        response = self.client.post(
-            "/analysis/feedback/123", json={"feedback": "This was actually XSS"}
-        )
+        response = self.client.post("/analysis/feedback/123", json={"feedback": "This was actually XSS"})
         assert response.status_code == 200
 
         data = response.json()

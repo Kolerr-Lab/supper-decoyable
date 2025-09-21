@@ -161,9 +161,7 @@ def cached(ttl: Optional[int] = None, key_prefix: str = ""):
         @wraps(func)
         def wrapper(*args, **kwargs):
             cache = get_cache()
-            cache_key = (
-                f"{key_prefix}:{func.__name__}:{cache._make_key(*args, **kwargs)}"
-            )
+            cache_key = f"{key_prefix}:{func.__name__}:{cache._make_key(*args, **kwargs)}"
 
             # Try to get from cache first
             cached_result = cache.get(cache_key)
@@ -275,15 +273,11 @@ def warmup_cache(target_path: str = ".") -> Dict[str, Any]:
     try:
         # Warm up secrets scan
         secrets_result = scan_secrets_cached([target_path])
-        operations.append(
-            {"operation": "secrets_scan", "cached": True, "items": len(secrets_result)}
-        )
+        operations.append({"operation": "secrets_scan", "cached": True, "items": len(secrets_result)})
 
         # Warm up dependencies scan
         deps_result = scan_dependencies_cached(target_path)
-        operations.append(
-            {"operation": "deps_scan", "cached": True, "items": deps_result["count"]}
-        )
+        operations.append({"operation": "deps_scan", "cached": True, "items": deps_result["count"]})
 
         # Warm up SAST scan
         sast_result = scan_sast_cached(target_path)

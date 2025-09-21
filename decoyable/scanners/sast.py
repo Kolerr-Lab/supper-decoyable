@@ -205,8 +205,7 @@ class SASTScanner:
                                 end_line = min(len(lines), line_num + 2)
                                 snippet_lines = lines[start_line:end_line]
                                 snippet = "\n".join(
-                                    f"{i+start_line+1:4d}: {line}"
-                                    for i, line in enumerate(snippet_lines)
+                                    f"{i+start_line+1:4d}: {line}" for i, line in enumerate(snippet_lines)
                                 )
 
                                 vulnerability = Vulnerability(
@@ -226,9 +225,7 @@ class SASTScanner:
 
         return vulnerabilities
 
-    def scan_directory(
-        self, directory_path: str, extensions: Optional[List[str]] = None
-    ) -> List[Vulnerability]:
+    def scan_directory(self, directory_path: str, extensions: Optional[List[str]] = None) -> List[Vulnerability]:
         """Scan a directory recursively for vulnerabilities."""
         if extensions is None:
             extensions = [".py", ".js", ".ts", ".java", ".php", ".rb", ".go", ".rs"]
@@ -243,9 +240,7 @@ class SASTScanner:
 
         return vulnerabilities
 
-    def scan_code_string(
-        self, code: str, file_path: str = "<string>"
-    ) -> List[Vulnerability]:
+    def scan_code_string(self, code: str, file_path: str = "<string>") -> List[Vulnerability]:
         """Scan a code string for vulnerabilities."""
         vulnerabilities = []
         lines = code.split("\n")
@@ -258,10 +253,7 @@ class SASTScanner:
                         start_line = max(0, line_num - 3)
                         end_line = min(len(lines), line_num + 2)
                         snippet_lines = lines[start_line:end_line]
-                        snippet = "\n".join(
-                            f"{i+start_line+1:4d}: {line}"
-                            for i, line in enumerate(snippet_lines)
-                        )
+                        snippet = "\n".join(f"{i+start_line+1:4d}: {line}" for i, line in enumerate(snippet_lines))
 
                         vulnerability = Vulnerability(
                             file_path=file_path,
@@ -292,17 +284,13 @@ def scan_sast(path: str) -> Dict[str, Any]:
     # Group vulnerabilities by severity
     severity_counts = {}
     for vuln in vulnerabilities:
-        severity_counts[vuln.severity.value] = (
-            severity_counts.get(vuln.severity.value, 0) + 1
-        )
+        severity_counts[vuln.severity.value] = severity_counts.get(vuln.severity.value, 0) + 1
 
     return {
         "vulnerabilities": [vars(vuln) for vuln in vulnerabilities],
         "summary": {
             "total_vulnerabilities": len(vulnerabilities),
             "severity_breakdown": severity_counts,
-            "files_scanned": (
-                len({v.file_path for v in vulnerabilities}) if vulnerabilities else 0
-            ),
+            "files_scanned": (len({v.file_path for v in vulnerabilities}) if vulnerabilities else 0),
         },
     }

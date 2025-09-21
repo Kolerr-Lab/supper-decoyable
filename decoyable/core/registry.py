@@ -57,9 +57,7 @@ class Registry:
                 raise RegistryError(f"Key '{key}' already registered in '{self._name}'")
             self._store[key] = obj
 
-    def register(
-        self, name: Optional[str] = None, *, force: bool = False
-    ) -> Callable[[T], T]:
+    def register(self, name: Optional[str] = None, *, force: bool = False) -> Callable[[T], T]:
         """
         Decorator to register a callable/class.
 
@@ -72,9 +70,7 @@ class Registry:
         def decorator(obj: T) -> T:
             reg_name = name or getattr(obj, "__name__", None)
             if not reg_name:
-                raise RegistryError(
-                    "Could not determine registration name; provide 'name' explicitly"
-                )
+                raise RegistryError("Could not determine registration name; provide 'name' explicitly")
             self.add(reg_name, obj, force=force)
             return obj
 

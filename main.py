@@ -10,14 +10,11 @@ from typing import Any
 
 from decoyable.scanners import deps, sast, secrets
 
-#!/usr/bin/env python3
-"""
-/g:/TECH/DECOYABLE/main.py
+# /g:/TECH/DECOYABLE/main.py
 
-DECOYABLE - Cybersecurity scanning tool for dependencies and secrets.
-Scans Python projects for security vulnerabilities including exposed secrets
-and missing dependencies.
-"""
+# DECOYABLE - Cybersecurity scanning tool for dependencies and secrets.
+# Scans Python projects for security vulnerabilities including exposed secrets
+# and missing dependencies.
 
 # Package / app metadata
 APP_NAME = "decoyable"
@@ -142,9 +139,7 @@ def run_scan(args: argparse.Namespace) -> int:
             if findings:
                 log.warning(f"Found {len(findings)} potential secrets:")
                 for finding in findings:
-                    print(
-                        f"{finding.filename}:{finding.lineno} [{finding.secret_type}] {finding.masked()}"
-                    )
+                    print(f"{finding.filename}:{finding.lineno} [{finding.secret_type}] {finding.masked()}")
                     if output_format == "verbose":
                         print(f"  Context: {finding.context}")
                 if scan_type == "secrets":
@@ -177,24 +172,20 @@ def run_scan(args: argparse.Namespace) -> int:
             summary = sast_results.get("summary", {})
 
             if vulnerabilities:
-                log.warning(
-                    f"Found {len(vulnerabilities)} potential security vulnerabilities:"
-                )
+                log.warning(f"Found {len(vulnerabilities)} potential security vulnerabilities:")
                 severity_order = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]
 
                 for vuln in sorted(
                     vulnerabilities,
                     key=lambda x: severity_order.index(
-                        x["severity"].value
-                        if hasattr(x["severity"], "value")
-                        else str(x["severity"])
+                        x["severity"].value if hasattr(x["severity"], "value") else str(x["severity"])
                     ),
                 ):
-                    severity = vuln['severity'].value if hasattr(vuln['severity'], 'value') else vuln['severity']
+                    severity = vuln["severity"].value if hasattr(vuln["severity"], "value") else vuln["severity"]
                     vuln_type = (
-                        vuln['vulnerability_type'].value
-                        if hasattr(vuln['vulnerability_type'], 'value')
-                        else vuln['vulnerability_type']
+                        vuln["vulnerability_type"].value
+                        if hasattr(vuln["vulnerability_type"], "value")
+                        else vuln["vulnerability_type"]
                     )
                     print(f"[{severity}] {vuln_type} - {vuln['file_path']}:{vuln['line_number']}")
                     print(f"  {vuln['description']}")
@@ -212,9 +203,7 @@ def run_scan(args: argparse.Namespace) -> int:
 
             # Print summary
             if summary:
-                print(
-                    f"\nSummary: {summary['total_vulnerabilities']} vulnerabilities found"
-                )
+                print(f"\nSummary: {summary['total_vulnerabilities']} vulnerabilities found")
                 print(f"Files scanned: {summary['files_scanned']}")
                 if summary["severity_breakdown"]:
                     print("Severity breakdown:")
@@ -256,12 +245,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         choices=["secrets", "deps", "sast", "all"],
         help="Type of scan to perform",
     )
-    scan.add_argument(
-        "path", nargs="?", default=".", help="Path to scan (default: current directory)"
-    )
-    scan.add_argument(
-        "--format", choices=["text", "verbose"], default="text", help="Output format"
-    )
+    scan.add_argument("path", nargs="?", default=".", help="Path to scan (default: current directory)")
+    scan.add_argument("--format", choices=["text", "verbose"], default="text", help="Output format")
 
     # test command (lightweight)
     tst = sub.add_parser("test", help="Run self-test checks")

@@ -87,7 +87,7 @@ def _is_vcs_or_local_entry(entry):
             if "git" in info or "svn" in info or "hg" in info:
                 return (
                     True,
-                    f"{name} uses VCS ({', '.join(k for k in info.keys() if k in ('git','svn','hg'))})",
+                    f"{name} uses VCS ({', '.join(k for k in info.keys() if k in ('git', 'svn', 'hg'))})",
                 )
             if "path" in info:
                 return True, f"{name} uses local path"
@@ -100,12 +100,7 @@ def _is_vcs_or_local_entry(entry):
     s = entry.strip()
 
     # common VCS prefixes
-    if (
-        s.startswith("git+")
-        or s.startswith("ssh+")
-        or s.startswith("hg+")
-        or s.startswith("svn+")
-    ):
+    if s.startswith("git+") or s.startswith("ssh+") or s.startswith("hg+") or s.startswith("svn+"):
         return True, "starts with VCS scheme"
 
     # file scheme or local path indicators
@@ -150,9 +145,7 @@ def test_pyproject_toml_dependencies_safe():
         is_bad, reason = _is_vcs_or_local_entry(d)
         if is_bad:
             bad.append((d, reason))
-    assert (
-        not bad
-    ), "Disallowed dependency declarations found in pyproject.toml:\n" + "\n".join(
+    assert not bad, "Disallowed dependency declarations found in pyproject.toml:\n" + "\n".join(
         f"- {item!r}: {reason}" for item, reason in bad
     )
 

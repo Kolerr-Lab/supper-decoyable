@@ -86,9 +86,7 @@ def find_entry_callable(mod: object) -> Callable | None:
     return None
 
 
-def call_entrypoint(
-    func: Callable, namespace: argparse.Namespace, forwarded_args: list[str]
-) -> int:
+def call_entrypoint(func: Callable, namespace: argparse.Namespace, forwarded_args: list[str]) -> int:
     """
     Call the discovered entrypoint with an appropriate argument pattern.
     Strategies:
@@ -142,18 +140,10 @@ def call_entrypoint(
 
 def build_parser(prog: str | None = None) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog=prog, description="decoyable CLI launcher")
-    parser.add_argument(
-        "--version", action="store_true", help="Show version information (if available)"
-    )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose logging"
-    )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Do not perform actions; for testing"
-    )
-    parser.add_argument(
-        "--config", "-c", metavar="FILE", help="Path to a configuration file"
-    )
+    parser.add_argument("--version", action="store_true", help="Show version information (if available)")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
+    parser.add_argument("--dry-run", action="store_true", help="Do not perform actions; for testing")
+    parser.add_argument("--config", "-c", metavar="FILE", help="Path to a configuration file")
     # All unknown args will be collected and forwarded to the underlying entrypoint
     return parser
 
@@ -200,9 +190,7 @@ def main(argv: list[str] | None = None) -> int:
 
     entry = find_entry_callable(mod)
     if entry is None:
-        LOGGER.error(
-            "No runnable entrypoint found in %s", getattr(mod, "__name__", "<module>")
-        )
+        LOGGER.error("No runnable entrypoint found in %s", getattr(mod, "__name__", "<module>"))
         return 3
 
     # Handle dry-run: if true, just print what would be called

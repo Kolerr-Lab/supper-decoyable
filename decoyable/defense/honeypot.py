@@ -44,15 +44,11 @@ async def forward_alert(data: Dict[str, Any]) -> None:
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.post(
-                endpoint, json=data, headers={"Content-Type": "application/json"}
-            )
+            resp = await client.post(endpoint, json=data, headers={"Content-Type": "application/json"})
             if resp.status_code >= 200 and resp.status_code < 300:
                 logger.info("Alert forwarded to security endpoint")
             else:
-                logger.error(
-                    f"Security endpoint returned {resp.status_code}: {resp.text}"
-                )
+                logger.error(f"Security endpoint returned {resp.status_code}: {resp.text}")
     except Exception as exc:
         logger.error(f"Failed to forward alert: {exc}")
 
@@ -106,9 +102,7 @@ class AttackLog(BaseModel):
 def get_client_ip(request: Request) -> str:
     """Extract client IP respecting proxy headers."""
     # Check common header names (lowercase in tests)
-    xff = request.headers.get("x-forwarded-for") or request.headers.get(
-        "X-Forwarded-For"
-    )
+    xff = request.headers.get("x-forwarded-for") or request.headers.get("X-Forwarded-For")
     if xff:
         return xff.split(",")[0].strip()
 
@@ -158,23 +152,15 @@ async def recent_logs(limit: int = 10) -> Dict[str, Any]:
     return {"logs": [], "limit": limit, "message": "TODO: integrate knowledge base"}
 
 
-@router.api_route(
-    "/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
-)
-async def honeypot_endpoint(
-    request: Request, background_tasks: BackgroundTasks, path: str
-) -> Response:
+@router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
+async def honeypot_endpoint(request: Request, background_tasks: BackgroundTasks, path: str) -> Response:
     start = time.time()
     full_path = f"/decoy/{path}"
     lower_path = full_path.lower()
     if lower_path.endswith((".json", ".api")) or path.endswith((".json", ".api")):
         content = json.dumps({"status": "ok", "message": "API endpoint active"})
         media_type = "application/json"
-    elif (
-        "wsdl" in lower_path
-        or lower_path.endswith((".xml",))
-        or path.endswith((".xml", ".wsdl"))
-    ):
+    elif "wsdl" in lower_path or lower_path.endswith((".xml",)) or path.endswith((".xml", ".wsdl")):
         content = '<?xml version="1.0"?><response><status>active</status></response>'
         media_type = "application/xml"
     elif "admin" in full_path.lower() or "login" in full_path.lower():
@@ -187,9 +173,7 @@ async def honeypot_endpoint(
     response = Response(content=content, media_type=media_type)
     elapsed_ms = (time.time() - start) * 1000
     if elapsed_ms > 50:
-        logger.warning(
-            f"Slow honeypot response: {elapsed_ms:.2f}ms for {request.url.path}"
-        )
+        logger.warning(f"Slow honeypot response: {elapsed_ms:.2f}ms for {request.url.path}")
 
     # background processing
     background_tasks.add_task(process_attack_async, request)
@@ -199,9 +183,7 @@ async def honeypot_endpoint(
 async def process_attack_async(request: Request) -> None:
     try:
         attack_log = await capture_request(request)
-        logger.warning(
-            f"Honeypot triggered: {attack_log.method} {attack_log.path} from {attack_log.ip_address}"
-        )
+        logger.warning(f"Honeypot triggered: {attack_log.method} {attack_log.path} from {attack_log.ip_address}")
 
         analysis_result = await analyze_attack_async(attack_log.dict())
 

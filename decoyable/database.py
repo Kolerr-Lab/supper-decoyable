@@ -38,9 +38,7 @@ class ScanResult(Base):
     results = Column(JSON, nullable=True)
     error_message = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     scan_duration = Column(Integer, nullable=True)  # in seconds
     file_count = Column(Integer, nullable=True)
 
@@ -70,9 +68,7 @@ class DatabaseManager:
         Args:
             database_url: Database connection URL
         """
-        self.database_url = database_url or os.getenv(
-            "DATABASE_URL", "sqlite:///decoyable.db"
-        )
+        self.database_url = database_url or os.getenv("DATABASE_URL", "sqlite:///decoyable.db")
         self.engine = None
         self.SessionLocal = None
         self._initialized = False
@@ -117,9 +113,7 @@ class DatabaseManager:
                 )
 
             # Create session factory
-            self.SessionLocal = sessionmaker(
-                autocommit=False, autoflush=False, bind=self.engine
-            )
+            self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
 
             # Create tables
             Base.metadata.create_all(bind=self.engine)
@@ -182,9 +176,7 @@ class DatabaseManager:
             if scan_type:
                 query = query.filter(ScanResult.scan_type == scan_type)
 
-            query = (
-                query.order_by(ScanResult.created_at.desc()).limit(limit).offset(offset)
-            )
+            query = query.order_by(ScanResult.created_at.desc()).limit(limit).offset(offset)
 
             results = []
             for result in query.all():
@@ -196,9 +188,7 @@ class DatabaseManager:
                         "status": result.status,
                         "results": result.results,
                         "error_message": result.error_message,
-                        "created_at": (
-                            result.created_at.isoformat() if result.created_at else None
-                        ),
+                        "created_at": (result.created_at.isoformat() if result.created_at else None),
                         "scan_duration": result.scan_duration,
                         "file_count": result.file_count,
                     }
@@ -211,9 +201,7 @@ class DatabaseManager:
         with self.get_session() as session:
             cache_entry = (
                 session.query(ScanCache)
-                .filter(
-                    ScanCache.cache_key == cache_key, ScanCache.expires_at > func.now()
-                )
+                .filter(ScanCache.cache_key == cache_key, ScanCache.expires_at > func.now())
                 .first()
             )
 
@@ -226,11 +214,7 @@ class DatabaseManager:
                     "scan_type": cache_entry.scan_type,
                     "target_path": cache_entry.target_path,
                     "results": cache_entry.results,
-                    "created_at": (
-                        cache_entry.created_at.isoformat()
-                        if cache_entry.created_at
-                        else None
-                    ),
+                    "created_at": (cache_entry.created_at.isoformat() if cache_entry.created_at else None),
                     "hit_count": cache_entry.hit_count,
                 }
 
@@ -251,11 +235,7 @@ class DatabaseManager:
 
         with self.get_session() as session:
             # Check if cache entry already exists
-            existing = (
-                session.query(ScanCache)
-                .filter(ScanCache.cache_key == cache_key)
-                .first()
-            )
+            existing = session.query(ScanCache).filter(ScanCache.cache_key == cache_key).first()
 
             if existing:
                 # Update existing entry
@@ -278,11 +258,7 @@ class DatabaseManager:
     def cleanup_expired_cache(self) -> int:
         """Clean up expired cache entries. Returns number of deleted entries."""
         with self.get_session() as session:
-            deleted_count = (
-                session.query(ScanCache)
-                .filter(ScanCache.expires_at <= func.now())
-                .delete()
-            )
+            deleted_count = session.query(ScanCache).filter(ScanCache.expires_at <= func.now()).delete()
 
             session.commit()
             logger.info(f"Cleaned up {deleted_count} expired cache entries")
@@ -299,9 +275,7 @@ class DatabaseManager:
                 # Get recent activity
                 recent_scans = (
                     session.query(ScanResult)
-                    .filter(
-                        ScanResult.created_at >= func.now() - func.interval("1 day")
-                    )
+                    .filter(ScanResult.created_at >= func.now() - func.interval("1 day"))
                     .count()
                 )
 
@@ -311,9 +285,7 @@ class DatabaseManager:
                     "cache_entries_count": cache_entries_count,
                     "recent_scans_24h": recent_scans,
                     "connection_pool_size": (
-                        getattr(self.engine.pool, "size", "N/A")
-                        if hasattr(self.engine, "pool")
-                        else "N/A"
+                        getattr(self.engine.pool, "size", "N/A") if hasattr(self.engine, "pool") else "N/A"
                     ),
                     "status": "healthy",
                 }
@@ -345,9 +317,7 @@ def store_scan_result(scan_type: str, target_path: str, status: str, **kwargs) -
     return db.store_scan_result(scan_type, target_path, status, **kwargs)
 
 
-def get_scan_results(
-    scan_type: Optional[str] = None, limit: int = 50
-) -> List[Dict[str, Any]]:
+def get_scan_results(scan_type: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
     """Convenience function to get scan results."""
     db = get_database_manager()
     return db.get_scan_results(scan_type=scan_type, limit=limit)

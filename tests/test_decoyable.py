@@ -319,9 +319,7 @@ class TestDockerTests:
         required_services = ["fastapi", "db", "redis", "nginx", "prometheus", "grafana"]
 
         for service in required_services:
-            assert (
-                service in services
-            ), f"Service {service} not found in docker-compose.yml"
+            assert service in services, f"Service {service} not found in docker-compose.yml"
 
     def test_dockerfile_exists(self):
         """Test that Dockerfile exists."""

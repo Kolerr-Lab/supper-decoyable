@@ -18,7 +18,6 @@ Usage:
 """
 
 
-
 @dataclass(frozen=True)
 class SecretFinding:
     filename: Optional[str]
@@ -98,7 +97,15 @@ def scan_text(
                     continue
                 # Build context: include a slice of the line around the match
                 ctx = line.strip()
-                findings.append(SecretFinding(filename=filename, lineno=lineno, secret_type=name, match=matched, context=ctx))
+                findings.append(
+                    SecretFinding(
+                        filename=filename,
+                        lineno=lineno,
+                        secret_type=name,
+                        match=matched,
+                        context=ctx,
+                    )
+                )
     # deduplicate by (filename, lineno, type, match)
     unique = {}
     for f in findings:

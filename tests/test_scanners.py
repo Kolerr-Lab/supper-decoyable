@@ -81,13 +81,9 @@ def _call_scan_interface(obj, text):
 
 @pytest.mark.usefixtures("tmp_path")
 def test_scanners_module_has_scanner_classes():
-    scanners_mod = pytest.importorskip(
-        "scanners", reason="No 'scanners' module to test"
-    )
+    scanners_mod = pytest.importorskip("scanners", reason="No 'scanners' module to test")
     scanner_classes = [
-        obj
-        for name, obj in vars(scanners_mod).items()
-        if inspect.isclass(obj) and name.lower().endswith("scanner")
+        obj for name, obj in vars(scanners_mod).items() if inspect.isclass(obj) and name.lower().endswith("scanner")
     ]
     if not scanner_classes:
         pytest.skip("No classes ending with 'Scanner' exported from scanners module")
@@ -108,19 +104,13 @@ def test_scanners_module_has_scanner_classes():
         except AttributeError:
             pytest.skip(f"{cls.__name__!r} has no scan/__call__ interface; skipping")
         except Exception as exc:
-            pytest.fail(
-                f"{cls.__name__!r}.scan(...) raised an unexpected exception: {exc}"
-            )
+            pytest.fail(f"{cls.__name__!r}.scan(...) raised an unexpected exception: {exc}")
 
         # The result should be an iterable (but not a plain string). Convert to list safely.
         assert result is not None, f"{cls.__name__!r}.scan returned None"
         if isinstance(result, str):
-            pytest.fail(
-                f"{cls.__name__!r}.scan returned a plain string, expected iterable of findings"
-            )
-        assert isinstance(
-            result, Iterable
-        ), f"{cls.__name__!r}.scan did not return an iterable"
+            pytest.fail(f"{cls.__name__!r}.scan returned a plain string, expected iterable of findings")
+        assert isinstance(result, Iterable), f"{cls.__name__!r}.scan did not return an iterable"
 
         # calling with empty string should not crash
         try:
@@ -131,13 +121,9 @@ def test_scanners_module_has_scanner_classes():
 
 
 def test_scan_file_method_if_present(tmp_path):
-    scanners_mod = pytest.importorskip(
-        "scanners", reason="No 'scanners' module to test"
-    )
+    scanners_mod = pytest.importorskip("scanners", reason="No 'scanners' module to test")
     scanner_classes = [
-        obj
-        for name, obj in vars(scanners_mod).items()
-        if inspect.isclass(obj) and name.lower().endswith("scanner")
+        obj for name, obj in vars(scanners_mod).items() if inspect.isclass(obj) and name.lower().endswith("scanner")
     ]
     if not scanner_classes:
         pytest.skip("No classes ending with 'Scanner' exported from scanners module")
@@ -185,16 +171,12 @@ def test_scan_file_method_if_present(tmp_path):
 
         assert result is not None
         if isinstance(result, str):
-            pytest.fail(
-                f"{cls.__name__!r}.scan_file returned a plain string, expected iterable"
-            )
+            pytest.fail(f"{cls.__name__!r}.scan_file returned a plain string, expected iterable")
         assert isinstance(result, Iterable)
 
 
 def test_module_level_scan_functions_are_present_or_skipped():
-    scanners_mod = pytest.importorskip(
-        "scanners", reason="No 'scanners' module to test"
-    )
+    scanners_mod = pytest.importorskip("scanners", reason="No 'scanners' module to test")
     # Accept a module-level scan_text or scan function if present and test basic behavior
     for func_name in ("scan_text", "scan"):
         func = getattr(scanners_mod, func_name, None)
@@ -206,12 +188,8 @@ def test_module_level_scan_functions_are_present_or_skipped():
         try:
             res = func("simple sample text")
         except Exception as exc:
-            pytest.fail(
-                f"Module-level {func_name} raised exception on normal input: {exc}"
-            )
+            pytest.fail(f"Module-level {func_name} raised exception on normal input: {exc}")
         assert res is not None
         if isinstance(res, str):
-            pytest.fail(
-                f"Module-level {func_name} returned a plain string, expected iterable"
-            )
+            pytest.fail(f"Module-level {func_name} returned a plain string, expected iterable")
         assert isinstance(res, Iterable)
