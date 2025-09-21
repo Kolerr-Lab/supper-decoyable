@@ -101,7 +101,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    image: decoyable-decoy:latest
+    image: decoyable-decoy-ssh:latest
     env_file: .env
     environment:
       - DECOY_PORTS=2222
@@ -132,7 +132,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    image: decoyable-decoy:latest
+    image: decoyable-decoy-http:latest
     env_file: .env
     environment:
       - DECOY_PORTS=8080,8443
