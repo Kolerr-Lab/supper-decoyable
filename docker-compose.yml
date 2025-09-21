@@ -199,6 +199,12 @@ services:
         "--loglevel=info",
         "--queues=security",
       ]
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'OK'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
 
   nginx:
