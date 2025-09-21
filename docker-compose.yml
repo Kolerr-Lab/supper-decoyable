@@ -203,18 +203,26 @@ services:
 
   nginx:
     image: nginx:stable-alpine
+    entrypoint: []
+    command:
+      [
+        "sh",
+        "-c",
+        "mkdir -p /var/cache/nginx /var/run && nginx -g 'daemon off;'",
+      ]
     deploy:
       resources:
         limits:
           cpus: "0.25"
           memory: 256M
-    read_only: true
+    # read_only: true  # Disabled for nginx cache directory access
     cap_drop:
       - ALL
     cap_add:
       - NET_BIND_SERVICE
       - SETGID
       - SETUID
+      - CHOWN
     tmpfs:
       - /tmp
       - /var/cache/nginx
