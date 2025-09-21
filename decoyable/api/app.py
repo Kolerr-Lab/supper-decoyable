@@ -55,9 +55,69 @@ class ScanRequest(BaseModel):
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="decoyable API",
-        description="API for the decoyable project",
-        version="0.0.0",
+        title="DECOYABLE API",
+        description="""
+        # DECOYABLE - Enterprise Cybersecurity Scanning Platform
+
+        DECOYABLE is an AI-powered cybersecurity scanning platform that combines traditional security tools with advanced machine learning to provide comprehensive threat detection and analysis.
+
+        ## Features
+
+        * **Multi-Modal Scanning**: Secrets, dependencies, vulnerabilities, and behavioral analysis
+        * **AI-Powered Analysis**: LLM integration for intelligent threat assessment
+        * **Honeypot Technology**: Active defense mechanisms
+        * **Enterprise Ready**: Scalable, secure, and compliant
+        * **Developer Friendly**: Easy integration with CI/CD pipelines
+
+        ## Authentication
+
+        Some endpoints require authentication. Use API keys or OAuth2 tokens as specified in endpoint documentation.
+
+        ## Rate Limiting
+
+        API requests are rate-limited. Check the `X-RateLimit-*` headers in responses.
+
+        ## Support
+
+        - Documentation: [GitHub Repository](https://github.com/Kolerr-Lab/supper-decoyable)
+        - Issues: [GitHub Issues](https://github.com/Kolerr-Lab/supper-decoyable/issues)
+        - Security: [Security Policy](https://github.com/Kolerr-Lab/supper-decoyable/security/policy)
+        """,
+        version="0.1.0",
+        contact={
+            "name": "DECOYABLE Team",
+            "url": "https://github.com/Kolerr-Lab/supper-decoyable",
+            "email": "security@decoyable.dev",
+        },
+        license_info={
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT",
+        },
+        openapi_tags=[
+            {
+                "name": "health",
+                "description": "Health check and monitoring endpoints",
+            },
+            {
+                "name": "scanning",
+                "description": "Security scanning operations",
+            },
+            {
+                "name": "analysis",
+                "description": "Threat analysis and intelligence",
+            },
+            {
+                "name": "honeypot",
+                "description": "Honeypot management and monitoring",
+            },
+            {
+                "name": "metrics",
+                "description": "Prometheus metrics and monitoring",
+            },
+        ],
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
     )
 
     # Security middleware
@@ -76,19 +136,41 @@ def create_app() -> FastAPI:
     )
 
     # Basic endpoints
-    @app.get("/", summary="Root")
+    @app.get("/", summary="API Root", description="Returns basic API information and status", tags=["health"])
     async def root() -> dict:
-        return {"status": "ok", "service": "decoyable"}
+        return {"status": "ok", "service": "decoyable", "version": "0.1.0"}
 
-    @app.get("/health", summary="Health check")
+    @app.get("/health", summary="Health Check", description="Comprehensive health check endpoint for monitoring service availability", tags=["health"])
     async def health() -> dict:
-        return {"status": "healthy"}
+        return {"status": "healthy", "timestamp": "2025-09-21T00:00:00Z"}
 
-    @app.get("/metrics", summary="Prometheus metrics")
+    @app.get("/metrics", summary="Prometheus Metrics", description="Exposes Prometheus metrics for monitoring and alerting", tags=["metrics"])
     async def metrics() -> Response:
         return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
-    @app.post("/scan/secrets", summary="Scan for exposed secrets")
+    @app.post(
+        "/scan/secrets",
+        summary="Scan Directory for Exposed Secrets",
+        description="""
+        Performs a comprehensive scan of the specified directory for exposed secrets and sensitive information.
+
+        **What it scans for:**
+        - API keys and tokens
+        - Database credentials
+        - Private keys and certificates
+        - Cloud service credentials
+        - Authentication tokens
+        - Passwords and secrets
+
+        **Features:**
+        - Fast cached scanning
+        - Database result storage
+        - Detailed finding reports
+        - Performance metrics
+        """,
+        tags=["scanning"],
+        response_description="Scan results with findings, metadata, and performance metrics"
+    )
     async def scan_secrets(request: ScanRequest) -> dict:
         """Scan a path for exposed secrets."""
         import time

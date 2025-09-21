@@ -1,53 +1,121 @@
 # Pull Request Template
 
-## Title
-<!-- Use a short, imperative title. Optionally prefix with feat|fix|docs|chore|refactor|perf|test|ci -->
-e.g. feat: add X, fix: correct Y
+## Description
 
-## Summary
-- One‑line summary of what this PR changes.
-- Why this change is needed (problem / use case).
+Brief description of the changes made in this PR.
 
-## Related issues
-Closes/fixes: # (if any)
+## Type of Change
 
-## Type of change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation
-- [ ] Refactor
-- [ ] Performance
-- [ ] Tests
-- [ ] CI / Build
-- [ ] Chore
-- [ ] Security
+What type of change does this PR introduce?
 
-## Checklist (required)
-- [ ] I have added/updated tests where applicable
-- [ ] I have updated the documentation (README, docs, or inline)
-- [ ] I have added migration notes or a changelog entry for breaking changes
-- [ ] All new and existing tests pass locally (or CI will run)
-- [ ] Linting/formatting checks have been run
+- [ ] 🐛 **Bug fix** (non-breaking change which fixes an issue)
+- [ ] ✨ **New feature** (non-breaking change which adds functionality)
+- [ ] 💥 **Breaking change** (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📚 **Documentation** (updates to documentation)
+- [ ] 🎨 **Style** (code style changes, formatting, etc.)
+- [ ] ♻️ **Refactor** (code refactoring without functional changes)
+- [ ] ⚡ **Performance** (performance improvements)
+- [ ] ✅ **Tests** (adding or updating tests)
+- [ ] 🔧 **Build/CI** (changes to build process or CI configuration)
+- [ ] 🔒 **Security** (security-related changes)
 
-## How to test
-1. Steps to reproduce or test this change (commands, env vars, example inputs).
-2. Expected result.
+## Changes Made
 
-## Backwards compatibility & migration
-- Describe any backward incompatible changes and required migrations.
+### Files Changed
 
-## Security considerations
-- Note any security implications or data sensitivity.
+List the main files that were modified:
 
-## Screenshots / GIFs (if UI)
-- Attach or link visuals demonstrating the change.
+- `file1.py` - Description of changes
+- `file2.py` - Description of changes
+- `docs/file.md` - Description of changes
 
-## Reviewer notes
-- Key files to review
-- Areas of risk
-- Anything to validate beyond automated tests
+### Key Changes
 
-## Suggested labels
+Detail the important changes made:
+
+1. **Change 1**: Description and rationale
+2. **Change 2**: Description and rationale
+3. **Change 3**: Description and rationale
+
+## Testing
+
+How have you tested these changes?
+
+### Test Coverage
+
+- [ ] Unit tests added/updated
+- [ ] Integration tests added/updated
+- [ ] Manual testing performed
+- [ ] Existing tests still pass
+
+### Test Results
+
+```bash
+# Test output or summary
+pytest results: 73 passed, 6 skipped
+```
+
+## Checklist
+
+### Code Quality
+
+- [ ] Code follows project style guidelines (Black, isort, ruff)
+- [ ] Type hints added where appropriate
+- [ ] Docstrings added/updated for public functions
+- [ ] No new linting errors introduced
+- [ ] Code is well-documented
+
+### Security
+
+- [ ] Security implications reviewed
+- [ ] No sensitive data exposed
+- [ ] Dependencies reviewed for vulnerabilities
+- [ ] Security tests added if applicable
+
+### Documentation
+
+- [ ] README updated if needed
+- [ ] API documentation updated
+- [ ] Changelog updated (if applicable)
+- [ ] Migration guide added for breaking changes
+
+### Testing & Validation
+
+- [ ] All tests pass locally
+- [ ] CI checks pass
+- [ ] Test coverage maintained or improved
+- [ ] Edge cases considered
+
+### Compatibility
+
+- [ ] Backward compatibility maintained (unless breaking change)
+- [ ] Python version compatibility verified
+- [ ] Dependencies compatibility checked
+
+## Breaking Changes
+
+If this PR introduces breaking changes, please describe:
+
+- **What breaks**: Description of what will no longer work
+- **Migration path**: How users should update their code
+- **Timeline**: When this change will be released
+
+## Screenshots/Demos
+
+If applicable, add screenshots or demos showing the changes:
+
+## Related Issues
+
+Closes: #issue_number
+Related: #issue_number
+
+## Additional Notes
+
+Any additional information or context reviewers should know:
+
+- **Performance impact**: Any performance implications
+- **Dependencies**: New dependencies added
+- **Future work**: Related work that should be done later
 - feature, bug, docs, breaking-change, perf, test, ci
 
 <!-- Keep PRs atomic and focused. Large changes may be split into multiple PRs. -->
