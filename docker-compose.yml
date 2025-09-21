@@ -4,7 +4,7 @@ services:
   fastapi:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     image: decoyable-fastapi:latest
     env_file: .env
     deploy:
@@ -100,7 +100,7 @@ services:
   decoy_ssh:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     image: decoyable-decoy-ssh:latest
     env_file: .env
     environment:
@@ -131,7 +131,7 @@ services:
   decoy_http:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     image: decoyable-decoy-http:latest
     env_file: .env
     environment:
@@ -163,7 +163,7 @@ services:
   celery_worker:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     image: decoyable-celery:latest
     env_file: .env
     deploy:
@@ -213,12 +213,17 @@ services:
     read_only: true
     cap_drop:
       - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - SETGID
+      - SETUID
     tmpfs:
       - /tmp
       - /var/cache/nginx
       - /var/run
     depends_on:
-      - fastapi
+      fastapi:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"

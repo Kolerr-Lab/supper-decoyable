@@ -3,10 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from decoyable.scanners.deps import (
-    collect_imports_from_dir,
-    installed_packages,
-)
+from decoyable.scanners.deps import collect_imports_from_dir, installed_packages
 
 # Import DECOYABLE modules
 from decoyable.scanners.secrets import SecretFinding

@@ -5,16 +5,7 @@ import os
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import (
-    JSON,
-    Column,
-    DateTime,
-    Integer,
-    String,
-    Text,
-    create_engine,
-    pool,
-)
+from sqlalchemy import JSON, Column, DateTime, Integer, String, Text, create_engine, pool
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
