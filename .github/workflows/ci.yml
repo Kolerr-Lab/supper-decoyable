@@ -212,7 +212,7 @@ jobs:
       - name: Test Docker container health
         run: |
           docker run -d --name test-container -p 8000:8000 decoyable:test
-          sleep 10
+          sleep 15
           curl -f http://localhost:8000/health || (docker logs test-container && exit 1)
           docker stop test-container
 

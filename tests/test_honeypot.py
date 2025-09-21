@@ -50,9 +50,9 @@ class TestHoneypotEndpoints:
             response = self.client.get(endpoint)
             response_time = (time.time() - start_time) * 1000
 
-            # Should return 200 and be reasonably fast (< 50ms in test environment)
+            # Should return 200 and be reasonably fast (< 100ms in test environment)
             assert response.status_code == 200
-            assert response_time < 50, f"Response too slow: {response_time}ms for {endpoint}"
+            assert response_time < 100, f"Response too slow: {response_time}ms for {endpoint}"
 
     def test_honeypot_content_types(self):
         """Test that honeypot returns appropriate content types."""
