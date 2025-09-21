@@ -48,6 +48,13 @@ bower_components/
 vendor/
 dist/
 build/
+
+# Database files (runtime data)
+*.db
+*.sqlite
+*.sqlite3
+decoyable.db
+decoyable_knowledge.db
 out/
 target/
 *.class
