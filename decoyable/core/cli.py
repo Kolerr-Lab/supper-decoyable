@@ -5,7 +5,7 @@ import importlib
 import inspect
 import logging
 import sys
-from typing import Callable, Optional
+from typing import Callable
 
 """
 decoyable.core.cli
@@ -208,7 +208,9 @@ def main(argv: list[str] | None = None) -> int:
     # Handle dry-run: if true, just print what would be called
     if args.dry_run:
         print(
-            "Dry run: would call entrypoint {} with forwarded args: {}".format(getattr(entry, "__name__", repr(entry)), extras)
+            "Dry run: would call entrypoint {} with forwarded args: {}".format(
+                getattr(entry, "__name__", repr(entry)), extras
+            )
         )
         return 0
 

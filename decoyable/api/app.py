@@ -55,7 +55,7 @@ class ScanRequest(BaseModel):
                 raise ValueError(f"Path does not exist: {abs_path}")
             return abs_path
         except (OSError, ValueError) as e:
-            raise ValueError(f"Invalid path: {str(e)}")
+            raise ValueError(f"Invalid path: {str(e)}") from e
 
 
 def create_app() -> FastAPI:
@@ -137,11 +137,11 @@ def create_app() -> FastAPI:
                     error_message=str(e),
                     scan_duration=scan_duration,
                 )
-            except:
+            except Exception:
                 pass  # Don't let database errors mask the original error
 
             logger.exception("Error scanning for secrets")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/scan/dependencies", summary="Scan for dependency issues")
     async def scan_dependencies(request: ScanRequest) -> dict:
@@ -185,11 +185,11 @@ def create_app() -> FastAPI:
                     error_message=str(e),
                     scan_duration=scan_duration,
                 )
-            except:
+            except Exception:
                 pass
 
             logger.exception("Error scanning dependencies")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/scan/sast", summary="Perform Static Application Security Testing")
     async def scan_sast(request: ScanRequest) -> dict:
@@ -235,11 +235,11 @@ def create_app() -> FastAPI:
                     error_message=str(e),
                     scan_duration=scan_duration,
                 )
-            except:
+            except Exception:
                 pass
 
             logger.exception("Error performing SAST scan")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/scan/async/secrets", summary="Asynchronously scan for exposed secrets")
     async def scan_secrets_async(request: ScanRequest) -> dict:
@@ -257,7 +257,7 @@ def create_app() -> FastAPI:
             }
         except Exception as e:
             logger.exception("Error starting async secrets scan")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post(
         "/scan/async/dependencies", summary="Asynchronously scan for dependency issues"
@@ -277,7 +277,7 @@ def create_app() -> FastAPI:
             }
         except Exception as e:
             logger.exception("Error starting async dependencies scan")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/scan/async/sast", summary="Asynchronously perform SAST")
     async def scan_sast_async(request: ScanRequest) -> dict:
@@ -295,7 +295,7 @@ def create_app() -> FastAPI:
             }
         except Exception as e:
             logger.exception("Error starting async SAST scan")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/scan/async/all", summary="Asynchronously perform all security scans")
     async def scan_all_async(request: ScanRequest) -> dict:
@@ -313,7 +313,7 @@ def create_app() -> FastAPI:
             }
         except Exception as e:
             logger.exception("Error starting comprehensive async scan")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.get("/tasks/{task_id}", summary="Check task status")
     async def get_task_status(task_id: str) -> dict:
@@ -325,7 +325,7 @@ def create_app() -> FastAPI:
             return status
         except Exception as e:
             logger.exception("Error checking task status")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.get("/cache/stats", summary="Get cache statistics")
     async def get_cache_stats() -> dict:
@@ -337,7 +337,7 @@ def create_app() -> FastAPI:
             return {"status": "success", "cache_stats": stats}
         except Exception as e:
             logger.exception("Error getting cache stats")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/cache/warmup", summary="Warm up the cache")
     async def warmup_cache(request: ScanRequest) -> dict:
@@ -349,7 +349,7 @@ def create_app() -> FastAPI:
             return result
         except Exception as e:
             logger.exception("Error warming up cache")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/cache/clear", summary="Clear the cache")
     async def clear_cache() -> dict:
@@ -368,7 +368,7 @@ def create_app() -> FastAPI:
             }
         except Exception as e:
             logger.exception("Error clearing cache")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.get("/database/stats", summary="Get database statistics")
     async def get_database_stats() -> dict:
@@ -382,7 +382,7 @@ def create_app() -> FastAPI:
             return {"status": "success", "database_stats": stats}
         except Exception as e:
             logger.exception("Error getting database stats")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.get("/database/results", summary="Get scan results history")
     async def get_scan_results(
@@ -397,7 +397,7 @@ def create_app() -> FastAPI:
             return {"status": "success", "results": results, "count": len(results)}
         except Exception as e:
             logger.exception("Error getting scan results")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     @app.post("/database/cleanup", summary="Clean up expired cache entries")
     async def cleanup_database() -> dict:
@@ -416,7 +416,7 @@ def create_app() -> FastAPI:
             logger.exception("Error cleaning up database")
             raise HTTPException(
                 status_code=500, detail=str(e)
-            )  # Generic exception handler to return JSON
+            ) from e  # Generic exception handler to return JSON
 
     @app.exception_handler(Exception)
     async def generic_exception_handler(request: Request, exc: Exception):

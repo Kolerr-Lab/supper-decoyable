@@ -1,6 +1,3 @@
-import os
-import re
-
 import pytest
 
 # tests/test_secrets.py

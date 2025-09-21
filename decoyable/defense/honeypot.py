@@ -23,28 +23,6 @@ from decoyable.defense.analysis import analyze_attack_async
 logger = logging.getLogger(__name__)
 
 # Environment variables
-DECOY_PORTS = os.getenv("DECOY_PORTS", "9001,2222").split(",")
-
-
-# Create router
-router = APIRouter(prefix="/decoy", tags=["honeypot"])
-
-"""
-decoyable/defense/honeypot.py
-
-Active cyber defense honeypot endpoints for DECOYABLE.
-Provides decoy endpoints that capture attacker requests and trigger defensive actions.
-"""
-
-import logging
-import os
-
-from fastapi import APIRouter
-
-# Configure logging
-logger = logging.getLogger(__name__)
-
-# Environment variables
 SECURITY_TEAM_ENDPOINT = os.getenv("SECURITY_TEAM_ENDPOINT", "")
 DECOY_PORTS = os.getenv("DECOY_PORTS", "9001,2222").split(",")
 

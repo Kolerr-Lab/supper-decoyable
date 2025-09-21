@@ -5,11 +5,8 @@ Unit and integration tests for the honeypot defense module.
 Tests fast responses, request capture, IP blocking, and alert forwarding.
 """
 
-import asyncio
-import json
 from unittest.mock import AsyncMock, Mock, patch
 
-import httpx
 import pytest
 from fastapi import Request
 from fastapi.testclient import TestClient

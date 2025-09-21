@@ -189,7 +189,8 @@ def test_factory_function_validation_behavior():
 
     if not saw_expected_error:
         pytest.skip(
-            f"{name} did not raise ValueError/TypeError for obvious invalid inputs; skipping strict validation assertion."
+            f"{name} did not raise ValueError/TypeError for obvious invalid inputs; "
+            "skipping strict validation assertion."
         )
 
 
@@ -220,4 +221,5 @@ def test_public_functions_have_docstrings():
     # require at least one public callable to have a docstring
     assert (
         have_doc
-    ), f"At least one public callable in {mod_name} should have a docstring. Public callables: {[n for n,_ in callables]}"
+    ), f"At least one public callable in {mod_name} should have a docstring. " \
+       f"Public callables: {[n for n,_ in callables]}"

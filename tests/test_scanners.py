@@ -1,6 +1,4 @@
 import inspect
-import tempfile
-import types
 from collections.abc import Iterable
 
 import pytest

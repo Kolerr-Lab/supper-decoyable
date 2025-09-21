@@ -1,6 +1,3 @@
-import json
-import os
-import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -9,7 +6,6 @@ import pytest
 from decoyable.scanners.deps import (
     collect_imports_from_dir,
     installed_packages,
-    missing_dependencies,
 )
 
 # Import DECOYABLE modules

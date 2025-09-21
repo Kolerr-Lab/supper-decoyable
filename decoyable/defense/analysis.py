@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import httpx
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 # Configure logging
@@ -518,7 +519,6 @@ async def apply_adaptive_defense(
 
 
 # FastAPI router for analysis endpoints
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 

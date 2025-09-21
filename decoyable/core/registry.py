@@ -105,7 +105,7 @@ class Registry:
             try:
                 del self._store[key]
             except KeyError:
-                raise KeyError(f"'{key}' not found in registry '{self._name}'")
+                raise KeyError(f"'{key}' not found in registry '{self._name}'") from None
 
     def clear(self) -> None:
         """Clear all registrations."""

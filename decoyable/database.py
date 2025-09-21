@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (
     JSON,
-    Boolean,
     Column,
     DateTime,
     Integer,
@@ -16,9 +15,8 @@ from sqlalchemy import (
     create_engine,
     pool,
 )
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 
 logger = logging.getLogger(__name__)

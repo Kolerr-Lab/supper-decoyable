@@ -3,11 +3,10 @@ from __future__ import annotations
 import argparse
 import ast
 import os
-import subprocess
 import sys
 from collections import defaultdict
 from importlib import metadata as importlib_metadata
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Iterable
 
 """
 decoyable.scanners.deps

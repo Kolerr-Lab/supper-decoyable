@@ -1,9 +1,7 @@
 import re
-import sys
 from pathlib import Path
 
 import pytest
-import tomllib
 
 # tests/test_deps.py
 """

@@ -3,9 +3,12 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import logging.handlers
 import sys
 from pathlib import Path
 from typing import Any
+
+from decoyable.scanners import deps, sast, secrets
 
 #!/usr/bin/env python3
 """
@@ -15,10 +18,6 @@ DECOYABLE - Cybersecurity scanning tool for dependencies and secrets.
 Scans Python projects for security vulnerabilities including exposed secrets
 and missing dependencies.
 """
-
-import logging.handlers
-
-from decoyable.scanners import deps, sast, secrets
 
 # Package / app metadata
 APP_NAME = "decoyable"
@@ -191,9 +190,13 @@ def run_scan(args: argparse.Namespace) -> int:
                         else str(x["severity"])
                     ),
                 ):
-                    print(
-                        f"[{vuln['severity'].value if hasattr(vuln['severity'], 'value') else vuln['severity']}] {vuln['vulnerability_type'].value if hasattr(vuln['vulnerability_type'], 'value') else vuln['vulnerability_type']} - {vuln['file_path']}:{vuln['line_number']}"
+                    severity = vuln['severity'].value if hasattr(vuln['severity'], 'value') else vuln['severity']
+                    vuln_type = (
+                        vuln['vulnerability_type'].value
+                        if hasattr(vuln['vulnerability_type'], 'value')
+                        else vuln['vulnerability_type']
                     )
+                    print(f"[{severity}] {vuln_type} - {vuln['file_path']}:{vuln['line_number']}")
                     print(f"  {vuln['description']}")
                     if output_format == "verbose":
                         print(f"  Recommendation: {vuln['recommendation']}")

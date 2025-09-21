@@ -6,7 +6,6 @@ Tests attack classification, knowledge base, and adaptive learning.
 """
 
 import json
-import sqlite3
 import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
@@ -128,7 +127,6 @@ class TestAdaptiveDefense:
 
     def test_get_all_patterns(self):
         """Test combining static and dynamic patterns."""
-        from decoyable.defense.analysis import ATTACK_PATTERNS
 
         # Add dynamic pattern
         self.ad.add_pattern("custom", r"custom attack")

@@ -1,12 +1,11 @@
 """Static Application Security Testing (SAST) scanner for DECOYABLE."""
 
-import ast
 import os
 import re
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional
 
 
 class VulnerabilitySeverity(Enum):
