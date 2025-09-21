@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "decoyable-oss"
+version = "0.1.0"
+description = "Big tech style OSS cybersecurity toolkit"
+authors = [{name="Decoyable Maintainers"}]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.12.5",
+    "rich>=13.7.1",
+    "fastapi>=0.111.0",
+    "uvicorn>=0.30.0",
+    "pydantic>=2.8.2",
+    "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.2",
+    "pytest-cov>=5.0.0",
+    "mypy>=1.11.2",
+    "ruff>=0.6.9",
+    "black>=24.8.0",
+    "pip-audit>=2.7.3",
+    "pre-commit>=3.8.0",
+]
+
+[project.scripts]
+ogu = "decoyable.core.cli:get_app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["decoyable*"]
