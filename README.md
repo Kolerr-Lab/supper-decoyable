@@ -8,6 +8,7 @@ DECOYABLE has evolved from a passive scanning tool into a **next-generation acti
 
 - 🤖 **AI-Powered Attack Analysis**: LLM-driven classification of cyber attacks
 - 🕵️ **Adaptive Honeypots**: Dynamic decoy endpoints that learn from attacker behavior
+- 🔒 **Zero-Trust Architecture**: Containerized security with comprehensive CI/CD pipeline
 - 🚫 **Immediate IP Blocking**: Automatic attacker containment with iptables rules
 - 📊 **Knowledge Base**: SQLite-powered learning system for attack pattern recognition
 - 🛡️ **Isolated Decoy Networks**: Docker network segmentation preventing production access
