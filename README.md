@@ -343,3 +343,41 @@ MIT License - see [LICENSE](LICENSE) file for details.
 ---
 
 **DECOYABLE**: From passive scanning to active defense. Transform your security posture with AI-powered cyber defense. 🛡️🤖
+
+## Commands (Quick Reference)
+
+Use these to run DECOYABLE locally or perform admin actions. For production, prefer Docker/compose flow.
+
+### Local (Unix)
+
+```bash
+# Full quick-check helper (creates venv if missing, runs lint/tests, quick scans, and starts dev server)
+./run_full_check.sh
+```
+
+### Windows PowerShell helper
+
+```powershell
+# Activate virtualenv
+.\.venv\Scripts\Activate.ps1
+
+# Install requirements
+pip install -r requirements.txt
+
+# Run tests
+pytest -q
+
+# Run quick scans
+python main.py scan secrets --path .
+python main.py scan deps --path .
+
+# Start dev server
+uvicorn decoyable.api.app:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Admin & Active Defense (see SECURITY.md for RBAC and operational guidance)
+
+- `decoyable defense status` — show honeypot status
+- `decoyable defense logs` — view recent attacks
+- `decoyable defense patterns` — show learned detection patterns
+- Admin-only (requires `API_AUTH_TOKEN` or similar): `decoyable defense block-ip <ip>`
