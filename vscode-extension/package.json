@@ -1,0 +1,220 @@
+{
+  "name": "decoyable-security",
+  "displayName": "DECOYABLE Security Scanner",
+  "description": "AI-powered cybersecurity scanning and automated remediation for VS Code",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Linters"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:decoyable.scanWorkspace",
+    "onCommand:decoyable.scanFile",
+    "onCommand:decoyable.fixAll",
+    "onCommand:decoyable.fixIssue",
+    "onView:decoyableResults"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "decoyable.scanWorkspace",
+        "title": "Scan Workspace",
+        "category": "DECOYABLE"
+      },
+      {
+        "command": "decoyable.scanFile",
+        "title": "Scan Current File",
+        "category": "DECOYABLE"
+      },
+      {
+        "command": "decoyable.fixAll",
+        "title": "Fix All Issues",
+        "category": "DECOYABLE"
+      },
+      {
+        "command": "decoyable.fixIssue",
+        "title": "Fix Selected Issue",
+        "category": "DECOYABLE"
+      },
+      {
+        "command": "decoyable.showResults",
+        "title": "Show Scan Results",
+        "category": "DECOYABLE"
+      },
+      {
+        "command": "decoyable.configure",
+        "title": "Configure DECOYABLE",
+        "category": "DECOYABLE"
+      },
+      {
+        "command": "decoyable.refreshResults",
+        "title": "Refresh Results",
+        "category": "DECOYABLE",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "decoyable.scanWorkspace",
+          "when": "workspaceFolderCount != 0"
+        },
+        {
+          "command": "decoyable.scanFile",
+          "when": "resourceExtname =~ /\\.(py|js|ts|java|cpp|c|php|rb|go|rs)$/"
+        },
+        {
+          "command": "decoyable.fixAll",
+          "when": "decoyable.hasResults"
+        },
+        {
+          "command": "decoyable.fixIssue",
+          "when": "decoyable.hasSelectedIssue"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "decoyable.scanFile",
+          "when": "resourceExtname =~ /\\.(py|js|ts|java|cpp|c|php|rb|go|rs)$/",
+          "group": "7_modification@1"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "decoyable.refreshResults",
+          "when": "view == decoyableResults",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "decoyable.fixIssue",
+          "when": "view == decoyableResults && viewItem == issue",
+          "group": "inline"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "decoyableResults",
+          "name": "Security Issues",
+          "icon": "$(shield)",
+          "contextualTitle": "DECOYABLE Security Scanner"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "DECOYABLE",
+      "properties": {
+        "decoyable.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to Python executable for running DECOYABLE"
+        },
+        "decoyable.cliPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to DECOYABLE CLI (leave empty to use bundled version)"
+        },
+        "decoyable.scanOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically scan files when saved"
+        },
+        "decoyable.scanOnOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically scan files when opened"
+        },
+        "decoyable.autoFix": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically apply safe fixes"
+        },
+        "decoyable.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications for scan results"
+        },
+        "decoyable.severityFilter": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low", "info"]
+          },
+          "default": ["critical", "high", "medium"],
+          "description": "Filter issues by severity level"
+        },
+        "decoyable.scanTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["secrets", "dependencies", "sast", "all"]
+          },
+          "default": ["all"],
+          "description": "Types of scans to perform"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "decoyable.scanFile",
+        "key": "ctrl+shift+s",
+        "mac": "cmd+shift+s",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "decoyable.fixAll",
+        "key": "ctrl+shift+f",
+        "mac": "cmd+shift+f",
+        "when": "decoyable.hasResults"
+      }
+    ],
+    "icons": {
+      "decoyable-icon": {
+        "description": "DECOYABLE extension icon",
+        "default": {
+          "fontPath": "./resources/icons.woff",
+          "fontCharacter": "\\E001"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "@types/mocha": "^10.0.0",
+    "eslint": "^8.28.0",
+    "@typescript-eslint/eslint-plugin": "^5.42.0",
+    "@typescript-eslint/parser": "^5.42.0",
+    "typescript": "^4.9.3",
+    "@vscode/test-electron": "^2.2.0",
+    "mocha": "^10.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kolerr-Lab/supper-decoyable"
+  },
+  "bugs": {
+    "url": "https://github.com/Kolerr-Lab/supper-decoyable/issues"
+  },
+  "homepage": "https://github.com/Kolerr-Lab/supper-decoyable#readme",
+  "author": "Kolerr Lab",
+  "license": "MIT",
+  "publisher": "kolerr-lab"
+}

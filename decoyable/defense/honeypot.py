@@ -19,6 +19,14 @@ from pydantic import BaseModel
 
 from decoyable.defense.analysis import analyze_attack_async
 
+# Import Kafka producer (optional)
+try:
+    from decoyable.streaming.kafka_producer import attack_producer
+    KAFKA_AVAILABLE = True
+except ImportError:
+    KAFKA_AVAILABLE = False
+    attack_producer = None
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -191,10 +199,19 @@ async def process_attack_async(request: Request) -> None:
         attack_log.confidence = analysis_result.get("confidence")
         attack_log.recommended_action = analysis_result.get("recommended_action")
 
+        # Publish to Kafka if enabled (fire-and-forget)
+        if KAFKA_AVAILABLE and attack_producer and attack_producer.enabled:
+            try:
+                await attack_producer.publish_attack_event(attack_log.dict())
+                logger.debug(f"Published attack event to Kafka: {attack_log.ip_address}")
+            except Exception as kafka_error:
+                logger.error(f"Failed to publish to Kafka: {kafka_error}")
+                # Continue processing even if Kafka fails
+
         # forward alert (best effort)
         await forward_alert(attack_log.dict())
 
-        # block if recommended
+        # block if recommended (critical path - synchronous)
         if attack_log.recommended_action in ("block", "block_ip"):
             await block_ip(attack_log.ip_address)
 

@@ -308,6 +308,7 @@ volumes:
   redis-data:
   prometheus-data:
   grafana-data:
+  kafka_data:
 
 networks:
   app_network:
@@ -328,3 +329,51 @@ networks:
     driver: bridge
     # NOTE: This network is intentionally NOT internal to allow external attacker access
     # Attackers can reach decoy services but cannot reach production services
+
+# Optional Kafka Streaming Services
+# Enable by setting KAFKA_ENABLED=true in .env
+# These services are isolated and only started when Kafka streaming is enabled
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    profiles: ["kafka"]  # Only start with --profile kafka
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    profiles: ["kafka"]  # Only start with --profile kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    ports:
+      - "9092:9092"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - kafka_data:/var/lib/kafka/data

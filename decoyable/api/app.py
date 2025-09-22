@@ -556,6 +556,28 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Initialize Kafka producer and consumers if enabled
+    kafka_task = None
+    if hasattr(app.state, 'kafka_enabled') and app.state.kafka_enabled:
+        try:
+            from decoyable.streaming.kafka_producer import attack_producer
+            from decoyable.streaming.kafka_consumer import start_all_consumers
+
+            # Start Kafka producer
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            async def init_kafka():
+                await attack_producer.start()
+                await start_all_consumers()
+
+            loop.run_until_complete(init_kafka())
+            logger.info("Kafka streaming initialized")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize Kafka: {e}")
+
     # SSL configuration
     ssl_config = {}
     if args.ssl_cert and args.ssl_key:

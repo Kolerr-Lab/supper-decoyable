@@ -69,6 +69,44 @@ class KnowledgeBase:
             )
             return cursor.lastrowid
 
+    def store_attack(self, attack_data: Dict[str, Any]) -> int:
+        """Store raw attack data in knowledge base."""
+        import sqlite3
+
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO attacks (timestamp, attack_data, analysis_result, created_at)
+                VALUES (?, ?, ?, ?)
+            """,
+                (
+                    attack_data.get("timestamp", datetime.utcnow().isoformat()),
+                    json.dumps(attack_data),
+                    json.dumps({}),  # Empty analysis for now
+                    datetime.utcnow().timestamp(),
+                ),
+            )
+            return cursor.lastrowid
+
+    def store_alert(self, alert_data: Dict[str, Any]) -> int:
+        """Store security alert in knowledge base."""
+        import sqlite3
+
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO attacks (timestamp, attack_data, analysis_result, created_at)
+                VALUES (?, ?, ?, ?)
+            """,
+                (
+                    alert_data.get("timestamp", datetime.utcnow().isoformat()),
+                    json.dumps(alert_data),
+                    json.dumps({"alert_type": alert_data.get("alert_type", "unknown")}),
+                    datetime.utcnow().timestamp(),
+                ),
+            )
+            return cursor.lastrowid
+
     def get_recent_analyses(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Get recent attack analyses."""
         import sqlite3

@@ -1,6 +1,49 @@
 # DECOYABLE - Next-Generation Active Cyber Defense
+- 📊 **Scalability**: Celery async processing, PostgreSQL persistence
 
-A comprehensive cybersecurity platform featuring passive scanning and **active defense capabilities** with AI-powered attack analysis and adaptive honeypot systems.
+## IDE Integration
+
+### VS Code Extension
+
+DECOYABLE now includes a **comprehensive VS Code extension** that brings security scanning and AI-powered fixes directly into your development environment:
+
+#### 🚀 Key Features
+- **Real-time Security Scanning**: Auto-scan files on save/open with live feedback
+- **AI-Powered Fixes**: Intelligent remediation using DECOYABLE's multi-provider LLM router
+- **Multi-Modal Analysis**: Secrets, dependencies, SAST, and code quality scanning
+- **Native IDE Integration**: Commands, tree views, diagnostics, and code actions
+- **Enterprise-Ready**: Professional UI with comprehensive settings and safety features
+
+#### 📦 Installation
+```bash
+# Install from packaged extension (recommended)
+code --install-extension vscode-extension/decoyable-security-1.0.0.vsix
+
+# Or install from source for development
+code vscode-extension/
+```
+
+#### 🛠️ Usage
+- **Scan Current File**: `Ctrl+Shift+S`
+- **Scan Workspace**: `DECOYABLE: Scan Workspace` command
+- **Fix All Issues**: `Ctrl+Shift+F`
+- **View Results**: Security Issues panel in Explorer
+
+#### ⚙️ Configuration
+Access settings through `Preferences: Open Settings (UI)`:
+```json
+{
+  "decoyable.pythonPath": "python",
+  "decoyable.scanOnSave": true,
+  "decoyable.scanOnOpen": false,
+  "decoyable.autoFix": false,
+  "decoyable.showNotifications": true
+}
+```
+
+**Learn more**: See `vscode-extension/INSTALLATION.md` for comprehensive setup and usage instructions.
+
+## Quick Start comprehensive cybersecurity platform featuring passive scanning and **active defense capabilities** with AI-powered attack analysis and adaptive honeypot systems.
 
 ## 🔥 What's New: Active Cyber Defense
 
@@ -12,6 +55,7 @@ DECOYABLE has evolved from a passive scanning tool into a **next-generation acti
 - 🚫 **Immediate IP Blocking**: Automatic attacker containment with iptables rules
 - 📊 **Knowledge Base**: SQLite-powered learning system for attack pattern recognition
 - 🛡️ **Isolated Decoy Networks**: Docker network segmentation preventing production access
+- 🛠️ **VS Code Extension**: Real-time security scanning and AI-powered fixes directly in your IDE
 
 ## About
 
@@ -48,17 +92,32 @@ DECOYABLE combines traditional security scanning with cutting-edge active defens
 ### Production-Ready
 - 🐳 **Docker Security**: Non-root execution, network isolation, resource limits
 - 📊 **Monitoring**: Prometheus metrics, health checks, Grafana dashboards
-- � **CI/CD Integration**: GitHub Actions with comprehensive testing
+- 🚀 **Kafka Streaming**: Optional high-volume event processing with horizontal scaling
+- 🔧 **CI/CD Integration**: GitHub Actions with comprehensive testing
 - 📈 **Scalability**: Celery async processing, PostgreSQL persistence
 
 ## Quick Start
 
-### Prerequisites
-- Python 3.8+
-- Docker & Docker Compose
-- OpenAI API key (optional, falls back to pattern matching)
+### Option 1: VS Code Extension (Recommended for Development)
 
-### Installation
+For the best development experience, use the **DECOYABLE VS Code Extension**:
+
+1. **Install the extension**:
+   ```bash
+   code --install-extension vscode-extension/decoyable-security-1.0.0.vsix
+   ```
+
+2. **Open your project** in VS Code - security scanning happens automatically!
+
+3. **Manual scanning**: `Ctrl+Shift+S` (current file) or `DECOYABLE: Scan Workspace`
+
+4. **Fix issues**: `Ctrl+Shift+F` for AI-powered remediation
+
+**See `vscode-extension/INSTALLATION.md` for detailed setup instructions.**
+
+### Option 2: CLI Installation
+
+For traditional CLI usage or server deployment:
 
 ```bash
 git clone https://github.com/your-org/decoyable.git
@@ -190,6 +249,42 @@ The system **learns and adapts**:
 - **Dynamic Rules**: Updates detection rules automatically
 - **Decoy Generation**: Creates new honeypot endpoints based on reconnaissance
 - **Feedback Loop**: Incorporates SOC feedback for improved accuracy
+
+### Kafka Streaming (Optional)
+
+For **high-volume deployments**, DECOYABLE supports **Kafka-based event streaming**:
+
+- **🔄 Asynchronous Processing**: Attack events published to Kafka topics for scalable processing
+- **📈 Horizontal Scaling**: Consumer groups can scale independently for analysis, alerts, and persistence
+- **🛡️ Back-Pressure Handling**: Critical blocking actions remain synchronous (<50ms latency)
+- **🔌 Plug-in Architecture**: Kafka is optional - system runs without it by default
+- **📊 Event-Driven Architecture**: Decouple event capture from processing for better resilience
+
+#### Enable Kafka Streaming
+
+```bash
+# Set environment variables
+export KAFKA_ENABLED=true
+export KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+export KAFKA_ATTACK_TOPIC=decoyable.attacks
+
+# Start with Kafka profile
+docker-compose --profile kafka up
+```
+
+#### Architecture
+
+```text
+Attack Request → Honeypot Capture → Kafka Producer → Topics
+                                                       ↓
+Consumer Groups → Analysis → SOC Alerts → Database → Adaptive Defense
+```
+
+**Benefits:**
+- Handle "thousand cuts" style attacks without blocking the main application
+- Scale analysis, alerting, and persistence independently
+- Replay failed events from Kafka topics
+- Integrate with existing Kafka-based security pipelines
 
 ## API Documentation
 
