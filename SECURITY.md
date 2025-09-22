@@ -15,7 +15,7 @@ If you discover a security vulnerability in DECOYABLE, please report it to us as
 
 ### Contact Information
 
-- **Email**: `security@decoyable.dev`
+- **Email**: `ricky@kolerr.com`
 - **PGP Key**: [Download our PGP public key](https://decoyable.dev/pgp-key.asc)
 - **Response Time**: We will acknowledge your report within 48 hours and provide a more detailed response within 7 days indicating our next steps.
 
@@ -90,5 +90,5 @@ DECOYABLE includes several built-in security features:
 
 For security-related questions or concerns:
 
-- Email: `security@decoyable.dev`
-- General inquiries: `support@decoyable.dev`
+- Email: `ricky@kolerr.com`
+- General inquiries: `lab.kolerr@kolerr.com`

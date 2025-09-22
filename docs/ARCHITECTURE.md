@@ -348,4 +348,5 @@ When making architectural changes:
 For architecture questions or contributions:
 - **Technical Lead**: [GitHub Profile]
 - **Architecture Discussions**: [GitHub Discussions]
-- **Security Review**: security@decoyable.dev
+- **Security Review**: ricky@kolerr.com 
+ 

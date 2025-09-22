@@ -11,7 +11,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 authors = [
-    { name = "Your Name", email = "you@example.com" }
+    { name = "Kolerr Lab", email = "lab.kolerr@kolerr.com" }
 ]
 dependencies = [
     "fastapi>=0.104.0",
@@ -124,6 +124,9 @@ known-first-party = ["decoyable"]
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*" = ["S101", "PLR2004"]
 "__init__.py" = ["F401"]
+
+[tool.setuptools.packages.find]
+include = ["decoyable*"]
 
 [tool.pytest.ini_options]
 minversion = "7.4"

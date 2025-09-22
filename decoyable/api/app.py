@@ -87,7 +87,7 @@ def create_app() -> FastAPI:
         contact={
             "name": "DECOYABLE Team",
             "url": "https://github.com/Kolerr-Lab/supper-decoyable",
-            "email": "security@decoyable.dev",
+            "email": "lab.kolerr@kolerr.com",
         },
         license_info={
             "name": "MIT",
