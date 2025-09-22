@@ -41,7 +41,7 @@ dependencies = [
 ]
 
 [project.scripts]
-decoyable = "main:main"
+decoyable = "decoyable.core.cli:main"
 
 [tool.black]
 line-length = 120
