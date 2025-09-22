@@ -658,10 +658,10 @@ class CLIService:
             return self.run_honeypot_command(args)
 
         # Legacy greeting functionality (for backward compatibility)
-        name = args.name or config.get("name") or "World"
+        name = getattr(args, 'name', None) or config.get("name") or "World"
         self.logger.info("Hello, %s!", name)
 
-        if args.decoy:
+        if hasattr(args, 'decoy') and args.decoy:
             decoy_path = Path(args.decoy)
             try:
                 decoy_path.write_text(f"decoy for {name}\n", encoding="utf-8")

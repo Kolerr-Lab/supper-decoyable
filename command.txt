@@ -360,4 +360,6 @@ git clean -fd
 - Add project-specific commands (migration, seed, admin tasks) under relevant sections.
 - Keep this file updated when adding new developer scripts (package.json scripts, Makefile targets).
 
+uvicorn decoyable.api.app:app --reload
+
 End of cheat sheet.
