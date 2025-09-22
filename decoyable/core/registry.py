@@ -158,7 +158,7 @@ def import_string(dotted_path: str) -> Any:
     else:
         parts = dotted_path.rsplit(".", 1)
         if len(parts) == 1:
-            module_path, attr = parts[0], ""
+            module_path, attr = ""
         else:
             module_path, attr = parts
 
@@ -171,3 +171,31 @@ def import_string(dotted_path: str) -> Any:
         return getattr(module, attr)
     except AttributeError as exc:
         raise ImportError(f"Module '{module_path}' has no attribute '{attr}'") from exc
+
+
+# Attack-specific registry for DECOYABLE
+class AttackRegistry(Registry):
+    """
+    Specialized registry for attack types and patterns.
+    Provides methods specific to attack detection and classification.
+    """
+
+    def __init__(self):
+        super().__init__("attack-registry")
+
+    def register_attack_type(self, attack_type: str, metadata: Dict[str, Any]) -> None:
+        """Register a new attack type with metadata."""
+        if not isinstance(attack_type, str) or not attack_type:
+            raise ValueError("attack_type must be a non-empty string")
+        if not isinstance(metadata, dict):
+            raise ValueError("metadata must be a dictionary")
+
+        self.add(attack_type, metadata)
+
+    def get_attack_types(self) -> Dict[str, Any]:
+        """Get all registered attack types."""
+        return self.as_dict()
+
+    def is_attack_type_registered(self, attack_type: str) -> bool:
+        """Check if an attack type is registered."""
+        return attack_type in self

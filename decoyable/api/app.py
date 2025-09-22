@@ -114,6 +114,10 @@ def create_app() -> FastAPI:
                 "name": "metrics",
                 "description": "Prometheus metrics and monitoring",
             },
+            {
+                "name": "attacks",
+                "description": "Attack event monitoring and management",
+            },
         ],
         docs_url="/docs",
         redoc_url="/redoc",
@@ -143,6 +147,48 @@ def create_app() -> FastAPI:
     @app.get("/health", summary="Health Check", description="Comprehensive health check endpoint for monitoring service availability", tags=["health"])
     async def health() -> dict:
         return {"status": "healthy", "timestamp": "2025-09-21T00:00:00Z"}
+
+    @app.get("/api/v1/attacks", summary="Get Attack Events", description="Retrieve recent attack events and statistics", tags=["attacks"])
+    async def get_attacks(limit: int = 100, offset: int = 0) -> dict:
+        """Get recent attack events from the system."""
+        try:
+            # Import here to avoid circular imports
+            from decoyable.core.registry import AttackRegistry
+
+            registry = AttackRegistry()
+            attack_types = registry.get_attack_types()
+
+            # Mock attack data for testing - in real implementation this would come from database/Kafka
+            mock_attacks = [
+                {
+                    "id": "attack_001",
+                    "type": "sql_injection",
+                    "source_ip": "192.168.1.100",
+                    "timestamp": "2025-01-15T10:30:00Z",
+                    "severity": "high",
+                    "description": "SQL injection attempt detected"
+                },
+                {
+                    "id": "attack_002",
+                    "type": "xss",
+                    "source_ip": "10.0.0.50",
+                    "timestamp": "2025-01-15T10:25:00Z",
+                    "severity": "medium",
+                    "description": "Cross-site scripting attempt"
+                }
+            ]
+
+            return {
+                "status": "success",
+                "attacks": mock_attacks[:limit],
+                "total": len(mock_attacks),
+                "limit": limit,
+                "offset": offset,
+                "attack_types": list(attack_types.keys())
+            }
+        except Exception as e:
+            logger.exception("Error retrieving attacks")
+            raise HTTPException(status_code=500, detail=str(e))
 
     @app.get("/metrics", summary="Prometheus Metrics", description="Exposes Prometheus metrics for monitoring and alerting", tags=["metrics"])
     async def metrics() -> Response:

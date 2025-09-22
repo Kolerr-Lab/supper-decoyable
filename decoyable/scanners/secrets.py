@@ -2,7 +2,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Pattern, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Pattern, Tuple
 
 """
 decoyable.scanners.secrets
@@ -171,3 +171,61 @@ if __name__ == "__main__":
     findings = scan_paths(files)
     for f in findings:
         print(f"{f.filename}:{f.lineno} [{f.secret_type}] {f.masked()}  // {f.context}")
+
+
+class SecretScanner:
+    """
+    Class-based interface for secret scanning.
+    Provides a more object-oriented API for the secret scanning functionality.
+    """
+
+    def __init__(self):
+        self.patterns = _DEFAULT_PATTERNS
+        self.allowlist = []
+
+    def scan_content(self, content: str, filename: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Scan content for secrets.
+
+        Args:
+            content: Text content to scan
+            filename: Optional filename for context
+
+        Returns:
+            List of findings as dictionaries
+        """
+        findings = scan_text(content, filename=filename, patterns=self.patterns, allowlist=self.allowlist)
+        return [
+            {
+                "filename": f.filename,
+                "lineno": f.lineno,
+                "secret_type": f.secret_type,
+                "match": f.match,
+                "context": f.context,
+                "masked": f.masked()
+            }
+            for f in findings
+        ]
+
+    def scan_file(self, filepath: str) -> List[Dict[str, Any]]:
+        """
+        Scan a file for secrets.
+
+        Args:
+            filepath: Path to the file to scan
+
+        Returns:
+            List of findings as dictionaries
+        """
+        findings = scan_file(filepath, patterns=self.patterns, allowlist=self.allowlist)
+        return [
+            {
+                "filename": f.filename,
+                "lineno": f.lineno,
+                "secret_type": f.secret_type,
+                "match": f.match,
+                "context": f.context,
+                "masked": f.masked()
+            }
+            for f in findings
+        ]

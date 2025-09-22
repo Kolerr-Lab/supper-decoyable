@@ -14,6 +14,15 @@ from decoyable.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+# Import Kafka classes for patching in tests
+try:
+    from aiokafka import AIOKafkaConsumer
+    KAFKA_AVAILABLE = True
+except ImportError:
+    AIOKafkaConsumer = None  # For patching in tests
+    KAFKA_AVAILABLE = False
+    logger.warning("aiokafka not available. Kafka streaming disabled.")
+
 
 class AttackEventConsumer:
     """

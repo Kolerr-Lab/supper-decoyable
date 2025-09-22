@@ -1,5 +1,5 @@
 services:
-  fastapi:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
@@ -234,7 +234,7 @@ services:
       - /var/cache/nginx
       - /var/run
     depends_on:
-      fastapi:
+      app:
         condition: service_healthy
     ports:
       - "80:80"
@@ -297,43 +297,6 @@ services:
       - monitoring_network
     restart: unless-stopped
 
-secrets:
-  postgres_password:
-    file: ./secrets/postgres_password.txt
-  redis_password:
-    file: ./secrets/redis_password.txt
-
-volumes:
-  db-data:
-  redis-data:
-  prometheus-data:
-  grafana-data:
-  kafka_data:
-
-networks:
-  app_network:
-    driver: bridge
-    internal: true
-  db_network:
-    driver: bridge
-    internal: true
-  cache_network:
-    driver: bridge
-    internal: true
-  public_network:
-    driver: bridge
-  monitoring_network:
-    driver: bridge
-    internal: true
-  decoy_network:
-    driver: bridge
-    # NOTE: This network is intentionally NOT internal to allow external attacker access
-    # Attackers can reach decoy services but cannot reach production services
-
-# Optional Kafka Streaming Services
-# Enable by setting KAFKA_ENABLED=true in .env
-# These services are isolated and only started when Kafka streaming is enabled
-
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
     profiles: ["kafka"]  # Only start with --profile kafka
@@ -377,3 +340,36 @@ networks:
       retries: 5
     volumes:
       - kafka_data:/var/lib/kafka/data
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
+
+volumes:
+  db-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  kafka_data:
+
+networks:
+  app_network:
+    driver: bridge
+    internal: true
+  db_network:
+    driver: bridge
+    internal: true
+  cache_network:
+    driver: bridge
+    internal: true
+  public_network:
+    driver: bridge
+  monitoring_network:
+    driver: bridge
+    internal: true
+  decoy_network:
+    driver: bridge
+    # NOTE: This network is intentionally NOT internal to allow external attacker access
+    # Attackers can reach decoy services but cannot reach production services

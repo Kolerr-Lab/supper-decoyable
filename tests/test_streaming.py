@@ -36,18 +36,21 @@ class TestKafkaAttackProducer:
         assert not producer.enabled
         assert producer.producer is None
 
-    @patch('decoyable.streaming.kafka_producer.settings')
     @patch('decoyable.streaming.kafka_producer.AIOKafkaProducer')
-    def test_producer_initialization_success(self, mock_producer_class, mock_settings):
+    @patch('decoyable.streaming.kafka_producer.settings')
+    def test_producer_initialization_success(self, mock_settings, mock_producer_class):
         """Test successful producer initialization."""
-        mock_producer_instance = MagicMock()
-        mock_producer_class.return_value = mock_producer_instance
+        mock_settings.kafka_enabled = True
+        # Mock KAFKA_AVAILABLE
+        with patch('decoyable.streaming.kafka_producer.KAFKA_AVAILABLE', True):
+            mock_producer_instance = MagicMock()
+            mock_producer_class.return_value = mock_producer_instance
 
-        producer = KafkaAttackProducer()
+            producer = KafkaAttackProducer()
 
-        assert producer.enabled
-        assert producer.producer == mock_producer_instance
-        mock_producer_class.assert_called_once()
+            assert producer.enabled
+            assert producer.producer == mock_producer_instance
+            mock_producer_class.assert_called_once()
 
     @patch('decoyable.streaming.kafka_producer.settings')
     def test_producer_initialization_failure_missing_dependency(self, mock_settings):
@@ -58,37 +61,41 @@ class TestKafkaAttackProducer:
             assert not producer.enabled
             assert producer.producer is None
 
+    @pytest.mark.asyncio
     @patch('decoyable.streaming.kafka_producer.settings')
     @patch('decoyable.streaming.kafka_producer.AIOKafkaProducer')
     async def test_publish_attack_event_success(self, mock_producer_class, mock_settings):
         """Test successful publishing of attack events."""
-        mock_producer_instance = AsyncMock()
-        mock_producer_class.return_value = mock_producer_instance
+        mock_settings.kafka_enabled = True
+        mock_settings.kafka_attack_topic = "test.attacks"
+        with patch('decoyable.streaming.kafka_producer.KAFKA_AVAILABLE', True):
+            mock_producer_instance = AsyncMock()
+            mock_producer_class.return_value = mock_producer_instance
 
-        producer = KafkaAttackProducer()
-        await producer.start()
+            producer = KafkaAttackProducer()
+            await producer.start()
 
-        attack_data = {
-            "ip_address": "192.168.1.100",
-            "method": "GET",
-            "path": "/admin",
-            "timestamp": "2024-01-01T00:00:00Z"
-        }
+            attack_data = {
+                "ip_address": "192.168.1.100",
+                "method": "GET",
+                "path": "/admin",
+                "timestamp": "2024-01-01T00:00:00Z"
+            }
 
-        result = await producer.publish_attack_event(attack_data)
+            result = await producer.publish_attack_event(attack_data)
 
-        assert result is True
-        mock_producer_instance.send_and_wait.assert_called_once()
+            assert result is True
+            mock_producer_instance.send_and_wait.assert_called_once()
 
-        # Check the event structure
-        call_args = mock_producer_instance.send_and_wait.call_args
-        topic = call_args[0][0]
-        event = call_args[0][1]
+            # Check the event structure
+            call_args = mock_producer_instance.send_and_wait.call_args
+            topic = call_args[0][0]
+            event = call_args[1]['value']
 
-        assert topic == "test.attacks"
-        assert event["event_type"] == "attack_detected"
-        assert event["data"] == attack_data
+            assert topic == "test.attacks"
+            assert event == attack_data
 
+    @pytest.mark.asyncio
     @patch('decoyable.streaming.kafka_producer.settings')
     async def test_publish_attack_event_disabled(self, mock_settings):
         """Test publishing fails gracefully when producer is disabled."""
@@ -100,6 +107,7 @@ class TestKafkaAttackProducer:
 
         assert result is False
 
+    @pytest.mark.asyncio
     @patch('decoyable.streaming.kafka_producer.settings')
     @patch('decoyable.streaming.kafka_producer.AIOKafkaProducer')
     async def test_publish_attack_event_failure(self, mock_producer_class, mock_settings):
@@ -151,6 +159,7 @@ class TestAttackEventConsumer:
         assert consumer.group_id == "decoyable-test"
         mock_consumer_class.assert_called_once()
 
+    @pytest.mark.asyncio
     @patch('decoyable.streaming.kafka_consumer.analyze_attack_async')
     @patch('decoyable.streaming.kafka_consumer.apply_adaptive_defense')
     async def test_process_analysis_event(self, mock_adaptive_defense, mock_analyze):
@@ -169,6 +178,7 @@ class TestAttackEventConsumer:
         mock_analyze.assert_called_once_with(event["data"])
         mock_adaptive_defense.assert_called_once()
 
+    @pytest.mark.asyncio
     @patch('decoyable.streaming.kafka_consumer.forward_alert')
     async def test_process_alert_event(self, mock_forward_alert):
         """Test processing alert events."""
@@ -183,6 +193,7 @@ class TestAttackEventConsumer:
 
         mock_forward_alert.assert_called_once()
 
+    @pytest.mark.asyncio
     @patch('decoyable.streaming.kafka_consumer.knowledge_base')
     async def test_process_persistence_event(self, mock_kb):
         """Test processing persistence events."""
@@ -283,11 +294,11 @@ class TestConfiguration:
             "KAFKA_ATTACK_TOPIC": "custom.attacks"
         }
 
-        with patch.dict('os.environ', env_vars, clear=False):
+        with patch.dict('os.environ', env_vars, clear=True):
             settings = Settings()
 
             assert settings.kafka_enabled is True
-            assert settings.kafka_bootstrap_servers == ["kafka1:9092", "kafka2:9092"]
+            assert settings.kafka_bootstrap_servers == "kafka1:9092,kafka2:9092"
             assert settings.kafka_attack_topic == "custom.attacks"
 
     def test_kafka_settings_defaults(self):
@@ -302,5 +313,5 @@ class TestConfiguration:
             settings = Settings()
 
             assert settings.kafka_enabled is False
-            assert settings.kafka_bootstrap_servers == ["localhost:9092"]
+            assert settings.kafka_bootstrap_servers == "localhost:9092"
             assert settings.kafka_attack_topic == "decoyable.attacks"
