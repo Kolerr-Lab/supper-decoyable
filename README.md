@@ -338,7 +338,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 - **Security Issues**: ricky@kolerr.com
 - **General Inquiries**: lab.kolerr@kolerr.com
-- **Documentation**: https://decoyable.readthedocs.io/
+- **Documentation**: lab.kolerr@kolerr.com
 
 ---
 
