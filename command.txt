@@ -92,6 +92,221 @@ dotnet run --project src/ProjectName
 npm run watch
 dotnet watch run
 
+-- DECOYABLE Commands --
+# ==================================================
+# Complete command reference for DECOYABLE platform
+# ==================================================
+
+# ---- Development Setup ----
+# Install dependencies
+pip install -r requirements.txt
+pip install -e .
+
+# Setup development environment
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# .venv\Scripts\Activate.ps1  # Windows PowerShell
+
+# ---- CLI Commands (main.py) ----
+# Scan for secrets only
+python main.py scan secrets
+
+# Scan for dependencies only
+python main.py scan deps
+
+# Scan for both secrets and dependencies
+python main.py scan all
+
+# Scan with custom path
+python main.py scan all --path /path/to/scan
+
+# Scan with output file
+python main.py scan all --output results.json
+
+# Scan with verbose output
+python main.py scan all --verbose
+
+# ---- FastAPI Server ----
+# Start development server
+uvicorn decoyable.api.app:app --reload --host 0.0.0.0 --port 8000
+
+# Start production server
+uvicorn decoyable.api.app:app --host 0.0.0.0 --port 8000 --workers 4
+
+# Start with SSL
+uvicorn decoyable.api.app:app --ssl-keyfile key.pem --ssl-certfile cert.pem
+
+# ---- API Testing ----
+# Test secrets scan endpoint
+curl -X POST "http://localhost:8000/scan/secrets" \
+  -H "Content-Type: application/json" \
+  -d '{"path": ".", "recursive": true}'
+
+# Test dependencies scan endpoint
+curl -X POST "http://localhost:8000/scan/dependencies" \
+  -H "Content-Type: application/json" \
+  -d '{"path": ".", "format": "json"}'
+
+# Test full scan endpoint
+curl -X POST "http://localhost:8000/scan/all" \
+  -H "Content-Type: application/json" \
+  -d '{"path": ".", "output_format": "detailed"}'
+
+# Get scan results
+curl -X GET "http://localhost:8000/results/scan-123"
+
+# Health check
+curl -X GET "http://localhost:8000/health"
+
+# API documentation (Swagger)
+curl -X GET "http://localhost:8000/docs"
+
+# ---- Docker Commands ----
+# Build DECOYABLE image
+docker build -t decoyable:latest .
+
+# Run with Docker
+docker run -p 8000:8000 decoyable:latest
+
+# Run with environment variables
+docker run -p 8000:8000 -e DEBUG=true -e REDIS_URL=redis://localhost:6379 decoyable:latest
+
+# ---- Docker Compose ----
+# Start full stack (FastAPI + PostgreSQL + Redis + Nginx)
+docker-compose up -d
+
+# Start with rebuild
+docker-compose up --build -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Rebuild specific service
+docker-compose up --build api
+
+# ---- Testing ----
+# Run all tests
+pytest
+
+# Run tests quietly
+pytest -q
+
+# Run specific test file
+pytest tests/test_scanners.py
+
+# Run specific test
+pytest tests/test_scanners.py::test_secret_detection
+
+# Run with coverage
+pytest --cov=decoyable --cov-report=html
+
+# Run security tests only
+pytest -m security
+
+# Run integration tests
+pytest -m integration
+
+# ---- Code Quality ----
+# Format code
+black .
+
+# Check formatting
+black --check .
+
+# Lint code
+ruff check .
+
+# Fix linting issues
+ruff check --fix .
+
+# Type checking
+mypy decoyable/
+
+# Security scanning
+bandit -r decoyable/
+safety check
+
+# ---- Database ----
+# Initialize database (if using migrations)
+alembic upgrade head
+
+# Create migration
+alembic revision --autogenerate -m "Add new table"
+
+# Run migration
+alembic upgrade +1
+
+# ---- Monitoring ----
+# Start Prometheus
+docker run -p 9090:9090 -v prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+
+# Start Grafana
+docker run -p 3000:3000 grafana/grafana
+
+# View application metrics
+curl -X GET "http://localhost:8000/metrics"
+
+# ---- Celery (Background Tasks) ----
+# Start Celery worker
+celery -A decoyable.core.tasks worker --loglevel=info
+
+# Start Celery beat (scheduler)
+celery -A decoyable.core.tasks beat --loglevel=info
+
+# Monitor Celery
+celery -A decoyable.core.tasks inspect active
+
+# ---- Logs & Debugging ----
+# View application logs
+tail -f logs/decoyable.log
+
+# View Docker logs
+docker-compose logs -f api
+
+# Debug mode
+DEBUG=true uvicorn decoyable.api.app:app --reload --log-level debug
+
+# Profile performance
+python -m cProfile -s time main.py scan all
+
+# ---- Production Deployment ----
+# Build for production
+docker build -t decoyable:v1.0.0 -f docker/Dockerfile.prod .
+
+# Deploy with docker-compose
+docker-compose -f docker-compose.prod.yml up -d
+
+# Health check in production
+curl -f https://your-domain.com/health
+
+# ---- Git & Release ----
+# Create release tag
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+
+# Create GitHub release
+gh release create v1.0.0 --title "DECOYABLE v1.0.0" --notes "Major release"
+
+# ---- Troubleshooting ----
+# Clear Python cache
+find . -type d -name __pycache__ -exec rm -rf {} +
+find . -name "*.pyc" -delete
+
+# Reset database
+docker-compose down -v
+docker-compose up -d db
+
+# Check port usage
+netstat -tlnp | grep :8000
+# Windows: netstat -ano | findstr :8000
+
+# Kill process on port
+lsof -ti:8000 | xargs kill -9
+# Windows: Stop-Process -Id (Get-NetTCPConnection -LocalPort 8000).OwningProcess -Force
+
 -- Docker --
 # build
 docker build -t decoyable:local .
@@ -141,6 +356,7 @@ git clean -fd
 
 -- Notes / TODO --
 - Replace example URLs, project names and ports with actual values.
+- DECOYABLE commands section added with complete CLI, API, Docker, and testing commands.
 - Add project-specific commands (migration, seed, admin tasks) under relevant sections.
 - Keep this file updated when adding new developer scripts (package.json scripts, Makefile targets).
 
