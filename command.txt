@@ -67,7 +67,7 @@ npm run dev
 python -m src.app
 -- Run FastAPI --
 # Start FastAPI app with Uvicorn
-uvicorn decoyable.api.app:app --reload --host 0.0.0.0 --port 8002
+uvicorn decoyable.api.app:app --reload 
 
 # Run DECOYABLE CLI
 # Scan for secrets
