@@ -24,7 +24,7 @@ class CLIService:
         self.logging_service = logging_service
         self.logger = get_logger("cli.service")
 
-    def run_scan_command(self, args: argparse.Namespace) -> int:
+    async def run_scan_command(self, args: argparse.Namespace) -> int:
         """Run security scan commands."""
         scanner_service = self.registry.get_by_name("scanner_service")
         if not scanner_service:
@@ -47,7 +47,7 @@ class CLIService:
             # Use the scanner service instead of direct imports
             if scan_type in ("secrets", "all"):
                 self.logger.info("Scanning for exposed secrets...")
-                findings = scanner_service.scan_secrets(target_path)
+                findings = (await scanner_service.scan_secrets(target_path)).results
 
                 if findings:
                     self.logger.warning(f"Found {len(findings)} potential secrets:")
@@ -76,13 +76,25 @@ class CLIService:
 
             if scan_type in ("deps", "all"):
                 self.logger.info("Scanning for dependency issues...")
-                result = scanner_service.scan_dependencies(target_path)
+                result = (await scanner_service.scan_dependencies(target_path)).results
 
-                missing_deps = result.get("missing_dependencies", [])
-                if missing_deps:
-                    self.logger.warning(f"Found {len(missing_deps)} missing dependencies:")
-                    for dep in missing_deps:
-                        print(f"{dep}")
+                # result is a list of DependencyIssue objects
+                missing_deps = [dep for dep in result if dep.issue_type == "missing_import"]
+                unused_deps = [dep for dep in result if dep.issue_type == "unused_dependency"]
+
+                if missing_deps or unused_deps:
+                    if missing_deps:
+                        self.logger.warning(f"Found {len(missing_deps)} missing dependencies:")
+                        for dep in missing_deps:
+                            print(f"  {dep.module_name}: {dep.description}")
+                            if dep.suggestions:
+                                print(f"    Suggestions: {', '.join(dep.suggestions)}")
+
+                    if unused_deps:
+                        self.logger.warning(f"Found {len(unused_deps)} unused dependencies:")
+                        for dep in unused_deps:
+                            print(f"  {dep.module_name}: {dep.description}")
+
                     if scan_type == "deps":
                         # Store result in database if available
                         if database_service:
@@ -93,7 +105,7 @@ class CLIService:
                                     scan_type="dependencies",
                                     target_path=target_path,
                                     status="success",
-                                    results=result,
+                                    results={"missing_deps": len(missing_deps), "unused_deps": len(unused_deps)},
                                     scan_duration=int(time.time() - start_time),
                                 )
                             )
@@ -103,10 +115,10 @@ class CLIService:
 
             if scan_type in ("sast", "all"):
                 self.logger.info("Performing Static Application Security Testing (SAST)...")
-                result = scanner_service.scan_sast(target_path)
+                result = (await scanner_service.scan_sast(target_path)).results
 
-                vulnerabilities = result.get("vulnerabilities", [])
-                summary = result.get("summary", {})
+                # result is a list of Vulnerability objects
+                vulnerabilities = result
 
                 if vulnerabilities:
                     self.logger.warning(f"Found {len(vulnerabilities)} potential security vulnerabilities:")
@@ -118,18 +130,18 @@ class CLIService:
                             x["severity"].value if hasattr(x["severity"], "value") else str(x["severity"])
                         ),
                     ):
-                        severity = vuln["severity"].value if hasattr(vuln["severity"], "value") else vuln["severity"]
+                        severity = vuln.severity.value if hasattr(vuln.severity, "value") else vuln.severity
                         vuln_type = (
-                            vuln["vulnerability_type"].value
-                            if hasattr(vuln["vulnerability_type"], "value")
-                            else vuln["vulnerability_type"]
+                            vuln.vulnerability_type.value
+                            if hasattr(vuln.vulnerability_type, "value")
+                            else vuln.vulnerability_type
                         )
-                        print(f"[{severity}] {vuln_type} - {vuln['file_path']}:{vuln['line_number']}")
-                        print(f"  {vuln['description']}")
+                        print(f"[{severity}] {vuln_type} - {vuln.file_path}:{vuln.line_number}")
+                        print(f"  {vuln.description}")
                         if output_format == "verbose":
-                            print(f"  Recommendation: {vuln['recommendation']}")
+                            print(f"  Recommendation: {vuln.recommendation}")
                             print("  Code snippet:")
-                            for line in vuln["code_snippet"].split("\n"):
+                            for line in vuln.code_snippet.split("\n"):
                                 print(f"    {line}")
                             print()
 
@@ -153,12 +165,17 @@ class CLIService:
                     self.logger.info("No security vulnerabilities found.")
 
                 # Print summary
-                if summary:
-                    print(f"\nSummary: {summary['total_vulnerabilities']} vulnerabilities found")
-                    print(f"Files scanned: {summary['files_scanned']}")
-                    if summary.get("severity_breakdown"):
+                if vulnerabilities:
+                    severity_counts = {}
+                    for vuln in vulnerabilities:
+                        severity = vuln.severity.value if hasattr(vuln.severity, "value") else str(vuln.severity)
+                        severity_counts[severity] = severity_counts.get(severity, 0) + 1
+
+                    print(f"\nSummary: {len(vulnerabilities)} vulnerabilities found")
+                    print(f"Files scanned: {len({v.file_path for v in vulnerabilities})}")
+                    if severity_counts:
                         print("Severity breakdown:")
-                        for severity, count in summary["severity_breakdown"].items():
+                        for severity, count in severity_counts.items():
                             print(f"  {severity}: {count}")
 
             scan_duration = int(time.time() - start_time)
@@ -633,7 +650,8 @@ class CLIService:
 
         # Handle scanning commands
         if hasattr(args, "scan_type"):
-            return self.run_scan_command(args)
+            import asyncio
+            return asyncio.run(self.run_scan_command(args))
 
         # Handle test commands
         if getattr(args, "command", None) == "test":
