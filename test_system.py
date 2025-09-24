@@ -11,9 +11,11 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-import requests
+from typing import Any, Dict, List
+
 import pytest
-from typing import Dict, List, Any
+import requests
+
 
 class DecoyableSystemTest:
     def __init__(self):
@@ -24,12 +26,7 @@ class DecoyableSystemTest:
 
     def log_test(self, test_name: str, status: str, message: str = ""):
         """Log test results"""
-        result = {
-            "test": test_name,
-            "status": status,
-            "message": message,
-            "timestamp": time.time()
-        }
+        result = {"test": test_name, "status": status, "message": message, "timestamp": time.time()}
         self.test_results.append(result)
         print(f"[{status.upper()}] {test_name}: {message}")
 
@@ -37,8 +34,12 @@ class DecoyableSystemTest:
         """Test core DECOYABLE functionality without Kafka"""
         try:
             # Test CLI help
-            result = subprocess.run([sys.executable, "-m", "decoyable.core.cli", "--help"],
-                                  capture_output=True, text=True, cwd=self.base_dir)
+            result = subprocess.run(
+                [sys.executable, "-m", "decoyable.core.cli", "--help"],
+                capture_output=True,
+                text=True,
+                cwd=self.base_dir,
+            )
             if result.returncode == 0 and "usage:" in result.stdout.lower():
                 self.log_test("CLI Help", "PASS", "CLI help command works")
             else:
@@ -46,6 +47,7 @@ class DecoyableSystemTest:
 
             # Test registry functionality
             from decoyable.core.registry import AttackRegistry
+
             registry = AttackRegistry()
             registry.register_attack_type("test_attack", {"description": "Test attack"})
             if "test_attack" in registry.get_attack_types():
@@ -55,6 +57,7 @@ class DecoyableSystemTest:
 
             # Test scanners
             from decoyable.scanners.secrets import SecretScanner
+
             scanner = SecretScanner()
             test_content = "password = 'secret123'"
             findings = scanner.scan_content(test_content)
@@ -72,6 +75,7 @@ class DecoyableSystemTest:
             # Check if Kafka dependencies are available
             try:
                 import aiokafka
+
                 kafka_available = True
             except ImportError:
                 kafka_available = False
@@ -83,18 +87,12 @@ class DecoyableSystemTest:
 
             # Test Kafka producer (mocked)
             from decoyable.streaming.kafka_producer import KafkaAttackProducer
-            producer = KafkaAttackProducer(
-                bootstrap_servers="localhost:9092",
-                topic="test-attacks"
-            )
+
+            producer = KafkaAttackProducer(bootstrap_servers="localhost:9092", topic="test-attacks")
 
             # Mock the producer to avoid needing actual Kafka
             producer.producer = None  # Mock
-            test_event = {
-                "type": "test_attack",
-                "source_ip": "192.168.1.1",
-                "timestamp": time.time()
-            }
+            test_event = {"type": "test_attack", "source_ip": "192.168.1.1", "timestamp": time.time()}
 
             # This should not raise an exception even without Kafka
             try:
@@ -114,10 +112,12 @@ class DecoyableSystemTest:
         try:
             # Start API server in background
             import uvicorn
-            from decoyable.api.app import app
 
             # Test API directly without starting server
             from fastapi.testclient import TestClient
+
+            from decoyable.api.app import app
+
             client = TestClient(app)
 
             # Test health endpoint
@@ -147,6 +147,7 @@ class DecoyableSystemTest:
 
             # Validate YAML syntax
             import yaml
+
             with open(compose_file) as f:
                 config = yaml.safe_load(f)
 
@@ -204,8 +205,9 @@ class DecoyableSystemTest:
     async def run_unit_tests(self):
         """Run pytest unit tests"""
         try:
-            result = subprocess.run([sys.executable, "-m", "pytest", "tests/", "-v"],
-                                  capture_output=True, text=True, cwd=self.base_dir)
+            result = subprocess.run(
+                [sys.executable, "-m", "pytest", "tests/", "-v"], capture_output=True, text=True, cwd=self.base_dir
+            )
 
             if result.returncode == 0:
                 self.log_test("Unit Tests", "PASS", "All tests passed")
@@ -222,9 +224,9 @@ class DecoyableSystemTest:
         skipped = len([r for r in self.test_results if r["status"] == "SKIP"])
         warned = len([r for r in self.test_results if r["status"] == "WARN"])
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("DECOYABLE SYSTEM TEST REPORT")
-        print("="*60)
+        print("=" * 60)
         print(f"Total Tests: {len(self.test_results)}")
         print(f"Passed: {passed}")
         print(f"Failed: {failed}")
@@ -249,7 +251,7 @@ class DecoyableSystemTest:
     async def run_all_tests(self):
         """Run complete test suite"""
         print("Starting DECOYABLE System Tests...")
-        print("="*60)
+        print("=" * 60)
 
         await self.test_basic_functionality()
         await self.test_kafka_integration()
@@ -259,6 +261,7 @@ class DecoyableSystemTest:
         await self.run_unit_tests()
 
         return self.generate_report()
+
 
 async def main():
     tester = DecoyableSystemTest()
@@ -270,6 +273,7 @@ async def main():
     else:
         print("\nAll tests passed! 🎉")
         sys.exit(0)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

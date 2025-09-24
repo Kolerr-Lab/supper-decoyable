@@ -1,7 +1,7 @@
 import importlib
-from threading import RLock
-from typing import Any, Callable, Dict, Iterable, Iterator, Optional, TypeVar, Union, Type
 import inspect
+from threading import RLock
+from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Type, TypeVar, Union
 
 """
 decoyable.core.registry
@@ -56,12 +56,14 @@ class Registry:
 
     def register(self, name: Optional[str] = None, *, force: bool = False) -> Callable[[T], T]:
         """Decorator to register a callable/class."""
+
         def decorator(obj: T) -> T:
             reg_name = name or getattr(obj, "__name__", None)
             if not reg_name:
                 raise RegistryError("Could not determine registration name")
             self.add(reg_name, obj, force=force)
             return obj
+
         return decorator
 
     def get(self, key: str, default: Any = _sentinel) -> Any:
@@ -152,14 +154,15 @@ class ServiceRegistry:
             if name not in self._services:
                 self._services[name] = {}
 
-            self._services[name].update({
-                'instance': instance,
-                'singleton': True,
-                'dependencies': []
-            })
+            self._services[name].update({"instance": instance, "singleton": True, "dependencies": []})
 
-    def register(self, service_type: Type[T], implementation: Optional[Type[T]] = None,
-                 name: Optional[str] = None, singleton: bool = True) -> None:
+    def register(
+        self,
+        service_type: Type[T],
+        implementation: Optional[Type[T]] = None,
+        name: Optional[str] = None,
+        singleton: bool = True,
+    ) -> None:
         """
         Register a service implementation.
 
@@ -178,15 +181,18 @@ class ServiceRegistry:
             if service_name not in self._services:
                 self._services[service_name] = {}
 
-            self._services[service_name].update({
-                'type': service_type,
-                'implementation': implementation,
-                'singleton': singleton,
-                'dependencies': self._get_dependencies(implementation)
-            })
+            self._services[service_name].update(
+                {
+                    "type": service_type,
+                    "implementation": implementation,
+                    "singleton": singleton,
+                    "dependencies": self._get_dependencies(implementation),
+                }
+            )
 
-    def register_factory(self, service_type: Type[T], factory: Callable[[], T],
-                        name: Optional[str] = None, singleton: bool = True) -> None:
+    def register_factory(
+        self, service_type: Type[T], factory: Callable[[], T], name: Optional[str] = None, singleton: bool = True
+    ) -> None:
         """
         Register a service using a factory function.
 
@@ -202,12 +208,14 @@ class ServiceRegistry:
             if service_name not in self._services:
                 self._services[service_name] = {}
 
-            self._services[service_name].update({
-                'type': service_type,
-                'factory': factory,
-                'singleton': singleton,
-                'dependencies': self._get_dependencies(factory) if callable(factory) else []
-            })
+            self._services[service_name].update(
+                {
+                    "type": service_type,
+                    "factory": factory,
+                    "singleton": singleton,
+                    "dependencies": self._get_dependencies(factory) if callable(factory) else [],
+                }
+            )
 
     def register_instance(self, name: str, instance: Any) -> None:
         """
@@ -221,11 +229,7 @@ class ServiceRegistry:
             if name not in self._services:
                 self._services[name] = {}
 
-            self._services[name].update({
-                'instance': instance,
-                'singleton': True,
-                'dependencies': []
-            })
+            self._services[name].update({"instance": instance, "singleton": True, "dependencies": []})
 
     def get_by_name(self, name: str) -> Any:
         """
@@ -244,8 +248,8 @@ class ServiceRegistry:
             service_info = self._services[name]
 
             # Return cached instance for singletons
-            if 'instance' in service_info:
-                return service_info['instance']
+            if "instance" in service_info:
+                return service_info["instance"]
 
             # For registered instances, return them directly
             if name in self._instances:
@@ -284,17 +288,17 @@ class ServiceRegistry:
                 service_config = self._services[service_name]
 
                 # Create instance
-                if 'instance' in service_config:
-                    instance = service_config['instance']
-                elif 'factory' in service_config:
-                    instance = service_config['factory']()
+                if "instance" in service_config:
+                    instance = service_config["instance"]
+                elif "factory" in service_config:
+                    instance = service_config["factory"]()
                 else:
-                    implementation = service_config['implementation']
-                    dependencies = self._resolve_dependencies(service_config['dependencies'])
+                    implementation = service_config["implementation"]
+                    dependencies = self._resolve_dependencies(service_config["dependencies"])
                     instance = implementation(**dependencies)
 
                 # Cache singleton instances
-                if service_config.get('singleton', True):
+                if service_config.get("singleton", True):
                     self._instances[service_name] = instance
 
                 return instance
@@ -330,7 +334,7 @@ class ServiceRegistry:
             sig = inspect.signature(implementation)
         elif inspect.isclass(implementation):
             # Get __init__ signature
-            init_method = getattr(implementation, '__init__', None)
+            init_method = getattr(implementation, "__init__", None)
             if init_method:
                 sig = inspect.signature(init_method)
                 # Skip 'self' parameter
@@ -359,27 +363,30 @@ class ServiceRegistry:
                 try:
                     resolved[param_name] = dep_type()
                 except TypeError:
-                    raise ServiceNotFoundError(
-                        f"Cannot resolve dependency '{param_name}' of type {dep_type}"
-                    )
+                    raise ServiceNotFoundError(f"Cannot resolve dependency '{param_name}' of type {dep_type}")
         return resolved
 
 
 # Global service registry instance
 _service_registry = ServiceRegistry()
 
+
 def get_service_registry() -> ServiceRegistry:
     """Get the global service registry instance."""
     return _service_registry
 
-def register_service(service_type: Type[T], implementation: Optional[Type[T]] = None,
-                    name: Optional[str] = None, singleton: bool = True) -> None:
+
+def register_service(
+    service_type: Type[T], implementation: Optional[Type[T]] = None, name: Optional[str] = None, singleton: bool = True
+) -> None:
     """Register a service in the global registry."""
     _service_registry.register(service_type, implementation, name, singleton)
+
 
 def get_service(service_type: Type[T], name: Optional[str] = None) -> T:
     """Get a service from the global registry."""
     return _service_registry.get(service_type, name)
+
 
 def has_service(service_type: Type[T], name: Optional[str] = None) -> bool:
     """Check if a service is registered."""

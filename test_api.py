@@ -2,11 +2,13 @@
 """
 Quick test script to validate DECOYABLE API functionality
 """
-import subprocess
-import time
-import requests
-import sys
 import os
+import subprocess
+import sys
+import time
+
+import requests
+
 
 def test_api():
     """Test the DECOYABLE API server"""
@@ -14,11 +16,11 @@ def test_api():
 
     # Start the server in background
     print("Starting API server...")
-    server_process = subprocess.Popen([
-        sys.executable, "decoyable/api/app.py",
-        "--host", "127.0.0.1",
-        "--port", "8003"
-    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    server_process = subprocess.Popen(
+        [sys.executable, "decoyable/api/app.py", "--host", "127.0.0.1", "--port", "8003"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
     # Wait for server to start
     time.sleep(3)
@@ -51,6 +53,7 @@ def test_api():
         server_process.wait()
 
     print("🎉 API test completed!")
+
 
 if __name__ == "__main__":
     test_api()

@@ -38,7 +38,7 @@ class APIService:
     async def _startup(self) -> None:
         """Initialize services on startup."""
         # Register API service in registry
-        self.registry.register_instance('api', self)
+        self.registry.register_instance("api", self)
 
         # Initialize database connections, caches, etc.
         self.logger.info("API service startup complete")
@@ -90,11 +90,11 @@ class APIService:
     def _register_routers(self, app: FastAPI) -> None:
         """Register API routers."""
         # Import routers here to avoid circular imports
-        from .routers.health import router as health_router
-        from .routers.scanning import router as scanning_router
-        from .routers.metrics import router as metrics_router
-        from .routers.attacks import router as attacks_router
         from .honeypot_router import router as honeypot_router
+        from .routers.attacks import router as attacks_router
+        from .routers.health import router as health_router
+        from .routers.metrics import router as metrics_router
+        from .routers.scanning import router as scanning_router
 
         # Register routers with prefixes
         app.include_router(health_router, prefix="/api/v1", tags=["health"])

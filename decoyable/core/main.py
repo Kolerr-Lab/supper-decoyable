@@ -30,6 +30,7 @@ def load_config(path: Path | None) -> Dict[str, Any]:
     suffix = path.suffix.lower()
     if suffix in {".json"}:
         import json
+
         with path.open("r", encoding="utf-8") as fh:
             return json.load(fh)
 
@@ -45,6 +46,7 @@ def load_config(path: Path | None) -> Dict[str, Any]:
 
     # Fallback: try JSON parse
     import json
+
     with path.open("r", encoding="utf-8") as fh:
         return json.load(fh)
 
@@ -131,7 +133,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     # streaming alert
     streaming_alert = streaming_sub.add_parser("alert", help="Publish a security alert")
     streaming_alert.add_argument("alert_type", help="Type of security alert")
-    streaming_alert.add_argument("--severity", choices=["low", "medium", "high", "critical"], default="medium", help="Alert severity")
+    streaming_alert.add_argument(
+        "--severity", choices=["low", "medium", "high", "critical"], default="medium", help="Alert severity"
+    )
     streaming_alert.add_argument("--message", default="Security alert", help="Alert message")
     streaming_alert.add_argument("--source-ip", help="Source IP address")
     streaming_alert.add_argument("--details", default="{}", help="JSON alert details")
@@ -173,15 +177,16 @@ def setup_services(config_path: Path | None = None) -> tuple[Settings, ServiceRe
     logging_service = setup_logging_service(config)
 
     # Register core services
-    registry.register_instance('config', config)
-    registry.register_instance('logging', logging_service)
-    registry.register_instance('registry', registry)
+    registry.register_instance("config", config)
+    registry.register_instance("logging", logging_service)
+    registry.register_instance("registry", registry)
 
     # Initialize cache service
     try:
         from decoyable.core.cache_service import CacheService
+
         cache_service = CacheService(registry)
-        registry.register_instance('cache_service', cache_service)
+        registry.register_instance("cache_service", cache_service)
     except Exception as exc:
         logging_service.get_logger("cli").warning(f"Cache service not available: {exc}")
         cache_service = None
@@ -189,16 +194,18 @@ def setup_services(config_path: Path | None = None) -> tuple[Settings, ServiceRe
     # Initialize task queue service
     try:
         from decoyable.core.task_queue_service import TaskQueueService
+
         task_queue_service = TaskQueueService(registry)
-        registry.register_instance('task_queue_service', task_queue_service)
+        registry.register_instance("task_queue_service", task_queue_service)
     except Exception as exc:
         logging_service.get_logger("cli").warning(f"Task queue service not available: {exc}")
 
     # Initialize scanner service if available
     try:
         from decoyable.scanners.service import ScannerService
+
         scanner_service = ScannerService(config, logging_service, cache_service)
-        registry.register_instance('scanner_service', scanner_service)
+        registry.register_instance("scanner_service", scanner_service)
     except Exception as exc:
         # Scanner service may not be available in all configurations
         logging_service.get_logger("cli").warning(f"Scanner service not available: {exc}")
@@ -206,32 +213,35 @@ def setup_services(config_path: Path | None = None) -> tuple[Settings, ServiceRe
     # Initialize database service
     try:
         from decoyable.core.database_service import DatabaseService
+
         database_service = DatabaseService(config, registry, logging_service)
         # For now, initialize synchronously to avoid event loop issues
         # TODO: Properly handle async initialization in service startup
-        registry.register_instance('database_service', database_service)
+        registry.register_instance("database_service", database_service)
     except Exception as exc:
         logging_service.get_logger("cli").warning(f"Database service not available: {exc}")
 
     # Initialize streaming service
     try:
         from decoyable.core.streaming_service import StreamingService
+
         streaming_service = StreamingService(registry)
-        registry.register_instance('streaming_service', streaming_service)
+        registry.register_instance("streaming_service", streaming_service)
     except Exception as exc:
         logging_service.get_logger("cli").warning(f"Streaming service not available: {exc}")
 
     # Initialize honeypot service
     try:
         from decoyable.core.honeypot_service import HoneypotService
+
         honeypot_service = HoneypotService(registry)
-        registry.register_instance('honeypot_service', honeypot_service)
+        registry.register_instance("honeypot_service", honeypot_service)
     except Exception as exc:
         logging_service.get_logger("cli").warning(f"Honeypot service not available: {exc}")
 
     # Create CLI service
     cli_service = CLIService(config, registry, logging_service)
-    registry.register_instance('cli_service', cli_service)
+    registry.register_instance("cli_service", cli_service)
 
     return config, registry, cli_service
 
@@ -246,7 +256,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Setup services
     try:
-        config, registry, cli_service = setup_services(getattr(args, 'config', None))
+        config, registry, cli_service = setup_services(getattr(args, "config", None))
     except Exception as exc:
         print(f"Failed to initialize services: {exc}", file=sys.stderr)
         return 3
@@ -264,7 +274,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Load additional config if provided
     try:
-        config_dict = load_config(getattr(args, 'config', None)) if getattr(args, 'config', None) else {}
+        config_dict = load_config(getattr(args, "config", None)) if getattr(args, "config", None) else {}
     except Exception as exc:
         logger.exception("Failed to load configuration: %s", exc)
         return 3

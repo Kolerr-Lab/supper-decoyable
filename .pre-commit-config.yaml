@@ -45,3 +45,33 @@ repos:
       - id: mypy
         args: ["--ignore-missing-imports"]
         language_version: python3.11
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.9
+    hooks:
+      - id: bandit
+        args: ["-r", "decoyable/"]
+        exclude: "*/test*,*/tests/*"
+        language_version: python3.11
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.3.3
+    hooks:
+      - id: python-safety-dependencies-check
+        files: requirements\.txt$
+        language_version: python3.11
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--exclude-files', '.*\.pyc$', '--exclude-files', '.*__pycache__.*']
+        language_version: python3.11
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-docstring-first
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs

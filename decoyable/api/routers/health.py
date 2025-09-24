@@ -3,7 +3,7 @@ Health check router for API monitoring and diagnostics.
 """
 
 import time
-from typing import Dict, Any
+from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
@@ -16,12 +16,7 @@ logger = get_logger("api.health")
 @router.get("/", summary="API Root", description="Returns basic API information and status")
 async def root() -> Dict[str, Any]:
     """API root endpoint with basic service information."""
-    return {
-        "status": "ok",
-        "service": "decoyable",
-        "version": "0.1.0",
-        "timestamp": time.time()
-    }
+    return {"status": "ok", "service": "decoyable", "version": "0.1.0", "timestamp": time.time()}
 
 
 @router.get("/health", summary="Health Check", description="Comprehensive health check endpoint")
@@ -31,11 +26,7 @@ async def health_check() -> Dict[str, Any]:
 
     try:
         # Basic health checks
-        health_status = {
-            "status": "healthy",
-            "timestamp": time.time(),
-            "checks": {}
-        }
+        health_status = {"status": "healthy", "timestamp": time.time(), "checks": {}}
 
         # Check core services
         health_status["checks"]["api"] = {"status": "healthy", "response_time": time.time() - start_time}
@@ -64,19 +55,13 @@ async def health_check() -> Dict[str, Any]:
 async def readiness_check() -> Dict[str, Any]:
     """Kubernetes readiness probe endpoint."""
     # For now, always ready. In production, check dependencies.
-    return {
-        "status": "ready",
-        "timestamp": time.time()
-    }
+    return {"status": "ready", "timestamp": time.time()}
 
 
 @router.get("/health/live", summary="Liveness Check", description="Check if service is alive")
 async def liveness_check() -> Dict[str, Any]:
     """Kubernetes liveness probe endpoint."""
-    return {
-        "status": "alive",
-        "timestamp": time.time()
-    }
+    return {"status": "alive", "timestamp": time.time()}
 
 
 @router.get("/ping", summary="Ping", description="Simple ping endpoint for connectivity testing")

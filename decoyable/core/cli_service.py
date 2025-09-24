@@ -18,12 +18,7 @@ from decoyable.core.registry import ServiceRegistry
 class CLIService:
     """CLI service that manages command execution with dependency injection."""
 
-    def __init__(
-        self,
-        config: Settings,
-        registry: ServiceRegistry,
-        logging_service: LoggingService
-    ):
+    def __init__(self, config: Settings, registry: ServiceRegistry, logging_service: LoggingService):
         self.config = config
         self.registry = registry
         self.logging_service = logging_service
@@ -31,12 +26,12 @@ class CLIService:
 
     def run_scan_command(self, args: argparse.Namespace) -> int:
         """Run security scan commands."""
-        scanner_service = self.registry.get_by_name('scanner_service')
+        scanner_service = self.registry.get_by_name("scanner_service")
         if not scanner_service:
             self.logger.error("Scanner service not available")
             return 1
 
-        database_service = self.registry.get_by_name('database_service')
+        database_service = self.registry.get_by_name("database_service")
 
         scan_type = getattr(args, "scan_type", "all")
         target_path = getattr(args, "path", ".")
@@ -46,6 +41,7 @@ class CLIService:
 
         try:
             import time
+
             start_time = time.time()
 
             # Use the scanner service instead of direct imports
@@ -63,14 +59,17 @@ class CLIService:
                         # Store result in database if available
                         if database_service:
                             import asyncio
-                            asyncio.create_task(database_service.store_scan_result(
-                                scan_type="secrets",
-                                target_path=target_path,
-                                status="success",
-                                results={"findings": findings, "count": len(findings)},
-                                scan_duration=int(time.time() - start_time),
-                                file_count=len({f["filename"] for f in findings}) if findings else 0,
-                            ))
+
+                            asyncio.create_task(
+                                database_service.store_scan_result(
+                                    scan_type="secrets",
+                                    target_path=target_path,
+                                    status="success",
+                                    results={"findings": findings, "count": len(findings)},
+                                    scan_duration=int(time.time() - start_time),
+                                    file_count=len({f["filename"] for f in findings}) if findings else 0,
+                                )
+                            )
                         return 1  # Exit with error if secrets found
                 else:
                     self.logger.info("No secrets found.")
@@ -88,13 +87,16 @@ class CLIService:
                         # Store result in database if available
                         if database_service:
                             import asyncio
-                            asyncio.create_task(database_service.store_scan_result(
-                                scan_type="dependencies",
-                                target_path=target_path,
-                                status="success",
-                                results=result,
-                                scan_duration=int(time.time() - start_time),
-                            ))
+
+                            asyncio.create_task(
+                                database_service.store_scan_result(
+                                    scan_type="dependencies",
+                                    target_path=target_path,
+                                    status="success",
+                                    results=result,
+                                    scan_duration=int(time.time() - start_time),
+                                )
+                            )
                         return 1
                 else:
                     self.logger.info("All dependencies appear to be satisfied.")
@@ -135,14 +137,17 @@ class CLIService:
                         # Store result in database if available
                         if database_service:
                             import asyncio
-                            asyncio.create_task(database_service.store_scan_result(
-                                scan_type="sast",
-                                target_path=target_path,
-                                status="success",
-                                results=result,
-                                scan_duration=int(time.time() - start_time),
-                                file_count=result.get("summary", {}).get("files_scanned", 0),
-                            ))
+
+                            asyncio.create_task(
+                                database_service.store_scan_result(
+                                    scan_type="sast",
+                                    target_path=target_path,
+                                    status="success",
+                                    results=result,
+                                    scan_duration=int(time.time() - start_time),
+                                    file_count=result.get("summary", {}).get("files_scanned", 0),
+                                )
+                            )
                         return 1
                 else:
                     self.logger.info("No security vulnerabilities found.")
@@ -162,36 +167,42 @@ class CLIService:
             # Store successful scan result
             if database_service and scan_type == "all":
                 import asyncio
-                asyncio.create_task(database_service.store_scan_result(
-                    scan_type="all",
-                    target_path=target_path,
-                    status="success",
-                    results={"message": "Comprehensive scan completed"},
-                    scan_duration=scan_duration,
-                ))
+
+                asyncio.create_task(
+                    database_service.store_scan_result(
+                        scan_type="all",
+                        target_path=target_path,
+                        status="success",
+                        results={"message": "Comprehensive scan completed"},
+                        scan_duration=scan_duration,
+                    )
+                )
 
             return 0
 
         except Exception as exc:
-            scan_duration = int(time.time() - start_time) if 'start_time' in locals() else 0
+            scan_duration = int(time.time() - start_time) if "start_time" in locals() else 0
             self.logger.exception(f"Scan failed: {exc}")
 
             # Store error result in database if available
             if database_service:
                 import asyncio
-                asyncio.create_task(database_service.store_scan_result(
-                    scan_type=scan_type,
-                    target_path=target_path,
-                    status="error",
-                    error_message=str(exc),
-                    scan_duration=scan_duration,
-                ))
+
+                asyncio.create_task(
+                    database_service.store_scan_result(
+                        scan_type=scan_type,
+                        target_path=target_path,
+                        status="error",
+                        error_message=str(exc),
+                        scan_duration=scan_duration,
+                    )
+                )
 
             return 1
 
     def run_task_command(self, args: argparse.Namespace) -> int:
         """Run task queue commands."""
-        task_queue_service = self.registry.get_by_name('task_queue_service')
+        task_queue_service = self.registry.get_by_name("task_queue_service")
         if not task_queue_service:
             self.logger.error("Task queue service not available")
             return 1
@@ -249,6 +260,7 @@ class CLIService:
                 status = await task_queue_service.get_task_status(task_id)
 
             import json
+
             print(json.dumps(status, indent=2))
             return 0
 
@@ -290,6 +302,7 @@ class CLIService:
         async def get_stats():
             stats = await task_queue_service.get_queue_stats()
             import json
+
             print(json.dumps(stats, indent=2))
             return 0
 
@@ -301,7 +314,7 @@ class CLIService:
 
     def run_streaming_command(self, args: argparse.Namespace) -> int:
         """Run streaming commands."""
-        streaming_service = self.registry.get_by_name('streaming_service')
+        streaming_service = self.registry.get_by_name("streaming_service")
         if not streaming_service:
             self.logger.error("Streaming service not available")
             return 1
@@ -333,11 +346,9 @@ class CLIService:
         async def get_status():
             stats = await streaming_service.get_streaming_stats()
             health = await streaming_service.health_check()
-            result = {
-                "stats": stats,
-                "health": health
-            }
+            result = {"stats": stats, "health": health}
             import json
+
             print(json.dumps(result, indent=2))
             return 0
 
@@ -350,7 +361,6 @@ class CLIService:
     def _handle_streaming_publish(self, args: argparse.Namespace, streaming_service) -> int:
         """Handle streaming event publishing."""
         import asyncio
-        import json
 
         event_type = getattr(args, "event_type", "test_event")
         data = getattr(args, "data", "{}")
@@ -363,14 +373,10 @@ class CLIService:
             return 1
 
         async def publish_event():
-            success = await streaming_service.publish_attack_event(
-                event_type=event_type,
-                data=event_data,
-                key=key
-            )
+            success = await streaming_service.publish_attack_event(event_type=event_type, data=event_data, key=key)
             if success:
                 self.logger.info(f"Published {event_type} event successfully")
-                print(f"Event published successfully")
+                print("Event published successfully")
                 return 0
             else:
                 self.logger.error(f"Failed to publish {event_type} event")
@@ -418,7 +424,6 @@ class CLIService:
     def _handle_streaming_alert(self, args: argparse.Namespace, streaming_service) -> int:
         """Handle security alert publishing."""
         import asyncio
-        import json
 
         alert_type = getattr(args, "alert_type", "general")
         severity = getattr(args, "severity", "medium")
@@ -434,15 +439,11 @@ class CLIService:
 
         async def publish_alert():
             success = await streaming_service.publish_security_alert(
-                alert_type=alert_type,
-                severity=severity,
-                message=message,
-                source_ip=source_ip,
-                details=alert_details
+                alert_type=alert_type, severity=severity, message=message, source_ip=source_ip, details=alert_details
             )
             if success:
                 self.logger.info(f"Published security alert: {alert_type}")
-                print(f"Security alert published successfully")
+                print("Security alert published successfully")
                 return 0
             else:
                 self.logger.error(f"Failed to publish security alert: {alert_type}")
@@ -456,7 +457,7 @@ class CLIService:
 
     def run_honeypot_command(self, args: argparse.Namespace) -> int:
         """Run honeypot commands."""
-        honeypot_service = self.registry.get_by_name('honeypot_service')
+        honeypot_service = self.registry.get_by_name("honeypot_service")
         if not honeypot_service:
             self.logger.error("Honeypot service not available")
             return 1
@@ -488,11 +489,8 @@ class CLIService:
         async def get_status():
             status = await honeypot_service.get_honeypot_status()
             health = await honeypot_service.health_check()
-            result = {
-                "status": status,
-                "health": health
-            }
-            import json
+            result = {"status": status, "health": health}
+
             print(json.dumps(result, indent=2))
             return 0
 
@@ -510,12 +508,8 @@ class CLIService:
 
         async def get_attacks():
             attacks = await honeypot_service.get_recent_attacks(limit)
-            result = {
-                "attacks": attacks,
-                "count": len(attacks),
-                "limit": limit
-            }
-            import json
+            result = {"attacks": attacks, "count": len(attacks), "limit": limit}
+
             print(json.dumps(result, indent=2))
             return 0
 
@@ -534,9 +528,9 @@ class CLIService:
             result = {
                 "patterns": patterns,
                 "pattern_types": len(patterns),
-                "total_patterns": sum(len(pats) for pats in patterns.values())
+                "total_patterns": sum(len(pats) for pats in patterns.values()),
             }
-            import json
+
             print(json.dumps(result, indent=2))
             return 0
 
@@ -621,13 +615,13 @@ class CLIService:
     def _run_basic_tests(self) -> None:
         """Run basic service availability tests."""
         # Test that core services are available
-        required_services = ['config', 'logging', 'registry']
+        required_services = ["config", "logging", "registry"]
         for service_name in required_services:
             if not self.registry.get_by_name(service_name):
                 raise RuntimeError(f"Required service '{service_name}' not available")
 
         # Test scanner service if available
-        scanner_service = self.registry.get_by_name('scanner_service')
+        scanner_service = self.registry.get_by_name("scanner_service")
         if scanner_service:
             self.logger.debug("Scanner service available")
         else:
@@ -658,10 +652,10 @@ class CLIService:
             return self.run_honeypot_command(args)
 
         # Legacy greeting functionality (for backward compatibility)
-        name = getattr(args, 'name', None) or config.get("name") or "World"
+        name = getattr(args, "name", None) or config.get("name") or "World"
         self.logger.info("Hello, %s!", name)
 
-        if hasattr(args, 'decoy') and args.decoy:
+        if hasattr(args, "decoy") and args.decoy:
             decoy_path = Path(args.decoy)
             try:
                 decoy_path.write_text(f"decoy for {name}\n", encoding="utf-8")

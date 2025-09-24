@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Request, Response, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from pydantic import BaseModel
 
 from decoyable.core.registry import ServiceRegistry, get_service_registry
@@ -78,77 +78,53 @@ async def get_honeypot_service() -> Any:
 
 
 @router.get("/status")
-async def honeypot_status(honeypot_service = Depends(get_honeypot_service)) -> Dict[str, Any]:
+async def honeypot_status(honeypot_service=Depends(get_honeypot_service)) -> Dict[str, Any]:
     """Get honeypot service status."""
     return await honeypot_service.get_honeypot_status()
 
 
 @router.get("/health")
-async def honeypot_health(honeypot_service = Depends(get_honeypot_service)) -> Dict[str, Any]:
+async def honeypot_health(honeypot_service=Depends(get_honeypot_service)) -> Dict[str, Any]:
     """Get honeypot service health check."""
     return await honeypot_service.health_check()
 
 
 @router.get("/attacks")
-async def get_recent_attacks(
-    limit: int = 10,
-    honeypot_service = Depends(get_honeypot_service)
-) -> Dict[str, Any]:
+async def get_recent_attacks(limit: int = 10, honeypot_service=Depends(get_honeypot_service)) -> Dict[str, Any]:
     """Get recent honeypot attacks."""
     attacks = await honeypot_service.get_recent_attacks(limit)
-    return {
-        "attacks": attacks,
-        "count": len(attacks),
-        "limit": limit
-    }
+    return {"attacks": attacks, "count": len(attacks), "limit": limit}
 
 
 @router.get("/patterns")
-async def get_attack_patterns(honeypot_service = Depends(get_honeypot_service)) -> Dict[str, Any]:
+async def get_attack_patterns(honeypot_service=Depends(get_honeypot_service)) -> Dict[str, Any]:
     """Get attack patterns."""
     patterns = await honeypot_service.get_attack_patterns()
     return {
         "patterns": patterns,
         "pattern_types": len(patterns),
-        "total_patterns": sum(len(pats) for pats in patterns.values())
+        "total_patterns": sum(len(pats) for pats in patterns.values()),
     }
 
 
 @router.post("/block/{ip_address}")
-async def block_ip(
-    ip_address: str,
-    honeypot_service = Depends(get_honeypot_service)
-) -> Dict[str, Any]:
+async def block_ip(ip_address: str, honeypot_service=Depends(get_honeypot_service)) -> Dict[str, Any]:
     """Block an IP address."""
     success = await honeypot_service.block_ip(ip_address)
-    return {
-        "success": success,
-        "ip_address": ip_address,
-        "action": "blocked" if success else "failed"
-    }
+    return {"success": success, "ip_address": ip_address, "action": "blocked" if success else "failed"}
 
 
 @router.post("/decoy")
-async def add_decoy_endpoint(
-    endpoint: str,
-    honeypot_service = Depends(get_honeypot_service)
-) -> Dict[str, Any]:
+async def add_decoy_endpoint(endpoint: str, honeypot_service=Depends(get_honeypot_service)) -> Dict[str, Any]:
     """Add a decoy endpoint."""
     await honeypot_service.add_decoy_endpoint(endpoint)
-    return {
-        "success": True,
-        "endpoint": endpoint,
-        "action": "added"
-    }
+    return {"success": True, "endpoint": endpoint, "action": "added"}
 
 
 # Legacy decoy endpoints for backward compatibility
 @router.api_route("/decoy/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
 async def legacy_honeypot_endpoint(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    path: str,
-    honeypot_service = Depends(get_honeypot_service)
+    request: Request, background_tasks: BackgroundTasks, path: str, honeypot_service=Depends(get_honeypot_service)
 ) -> Response:
     """Legacy honeypot endpoint for backward compatibility."""
     start = time.time()
@@ -175,6 +151,7 @@ async def legacy_honeypot_endpoint(
     if elapsed_ms > 50:
         # Log slow responses but don't fail the request
         import logging
+
         logger = logging.getLogger(__name__)
         logger.warning(f"Slow honeypot response: {elapsed_ms:.2f}ms for {request.url.path}")
 
@@ -195,10 +172,12 @@ async def process_attack_background(request: Request, honeypot_service) -> None:
 
         # Log the result
         import logging
+
         logger = logging.getLogger(__name__)
         logger.info(f"Processed honeypot attack: {result}")
 
     except Exception as exc:
         import logging
+
         logger = logging.getLogger(__name__)
         logger.error(f"Error processing honeypot attack: {exc}")

@@ -22,6 +22,7 @@ from decoyable.defense.analysis import analyze_attack_async
 # Import Kafka producer (optional)
 try:
     from decoyable.streaming.kafka_producer import attack_producer
+
     KAFKA_AVAILABLE = True
 except ImportError:
     KAFKA_AVAILABLE = False

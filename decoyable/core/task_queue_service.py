@@ -8,13 +8,14 @@ Handles background scanning tasks, job queuing, and result management.
 import asyncio
 import logging
 import os
-from typing import Any, Dict, List, Optional, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 # Optional Celery import
 try:
     from celery import Celery
     from celery.result import AsyncResult, GroupResult
+
     CELERY_AVAILABLE = True
 except ImportError:
     CELERY_AVAILABLE = False
@@ -102,12 +103,7 @@ class TaskQueueService:
             logger.warning(f"Failed to initialize task queue service: {e}. Task queue disabled.")
             self._initialized = True
 
-    async def submit_scan_task(
-        self,
-        scan_type: str,
-        target_path: Union[str, Path],
-        **kwargs
-    ) -> str:
+    async def submit_scan_task(self, scan_type: str, target_path: Union[str, Path], **kwargs) -> str:
         """
         Submit a security scan task to the queue.
 
@@ -127,29 +123,15 @@ class TaskQueueService:
         target_path = str(target_path)
 
         if scan_type == "secrets":
-            task = self.celery_app.send_task(
-                "decoyable.tasks.scan_secrets_async",
-                args=[[target_path]],
-                kwargs=kwargs
-            )
+            task = self.celery_app.send_task("decoyable.tasks.scan_secrets_async", args=[[target_path]], kwargs=kwargs)
         elif scan_type == "dependencies":
             task = self.celery_app.send_task(
-                "decoyable.tasks.scan_dependencies_async",
-                args=[target_path],
-                kwargs=kwargs
+                "decoyable.tasks.scan_dependencies_async", args=[target_path], kwargs=kwargs
             )
         elif scan_type == "sast":
-            task = self.celery_app.send_task(
-                "decoyable.tasks.scan_sast_async",
-                args=[target_path],
-                kwargs=kwargs
-            )
+            task = self.celery_app.send_task("decoyable.tasks.scan_sast_async", args=[target_path], kwargs=kwargs)
         elif scan_type == "all":
-            task = self.celery_app.send_task(
-                "decoyable.tasks.scan_all_async",
-                args=[target_path],
-                kwargs=kwargs
-            )
+            task = self.celery_app.send_task("decoyable.tasks.scan_all_async", args=[target_path], kwargs=kwargs)
         else:
             raise ValueError(f"Unknown scan type: {scan_type}")
 
@@ -186,10 +168,7 @@ class TaskQueueService:
                     "task_id": task_id,
                     "state": result.state,
                     "message": result.info.get("message", "Task in progress..."),
-                    "progress": {
-                        "current": result.info.get("current", 0),
-                        "total": result.info.get("total", 1)
-                    },
+                    "progress": {"current": result.info.get("current", 0), "total": result.info.get("total", 1)},
                 }
             elif result.state == "SUCCESS":
                 return {
@@ -203,7 +182,7 @@ class TaskQueueService:
                     "task_id": task_id,
                     "state": result.state,
                     "error": str(result.info) if result.info else "Unknown error",
-                    "traceback": result.traceback if hasattr(result, 'traceback') else None,
+                    "traceback": result.traceback if hasattr(result, "traceback") else None,
                 }
 
         except Exception as e:
@@ -235,14 +214,17 @@ class TaskQueueService:
             inspect = self.celery_app.control.inspect()
 
             active_tasks = inspect.active()
-            stats.update({
-                "active_tasks": active_tasks or {},
-                "worker_count": len(active_tasks) if active_tasks else 0,
-            })
+            stats.update(
+                {
+                    "active_tasks": active_tasks or {},
+                    "worker_count": len(active_tasks) if active_tasks else 0,
+                }
+            )
 
             # Get queue lengths (requires Redis broker)
             try:
                 from redis import Redis
+
                 redis_client = Redis.from_url(stats["broker_url"])
                 queue_length = redis_client.llen("security")
                 stats["queue_length"] = queue_length

@@ -19,6 +19,7 @@ def scan_secrets_async(self, paths: List[str]) -> Dict[str, Any]:
     try:
         # Import here to avoid circular imports
         import asyncio
+
         from decoyable.core.registry import get_service_registry
 
         async def _scan():
@@ -57,6 +58,7 @@ def scan_dependencies_async(self, path: str) -> Dict[str, Any]:
     """Asynchronous task to scan for dependency issues using service architecture."""
     try:
         import asyncio
+
         from decoyable.core.registry import get_service_registry
 
         async def _scan():
@@ -95,6 +97,7 @@ def scan_sast_async(self, path: str) -> Dict[str, Any]:
     """Asynchronous task to perform SAST scanning using service architecture."""
     try:
         import asyncio
+
         from decoyable.core.registry import get_service_registry
 
         async def _scan():
@@ -133,6 +136,7 @@ def scan_all_async(self, path: str) -> Dict[str, Any]:
     """Asynchronous task to perform all security scans using service architecture."""
     try:
         import asyncio
+
         from decoyable.core.registry import get_service_registry
 
         async def _scan():
@@ -150,18 +154,30 @@ def scan_all_async(self, path: str) -> Dict[str, Any]:
             # Format results
             combined_result = {
                 "status": "success",
-                "secrets": {
-                    "findings": results.get("SECRETS", {}).results,
-                    "count": len(results.get("SECRETS", {}).results),
-                } if "SECRETS" in results else {},
-                "dependencies": {
-                    "missing_dependencies": results.get("DEPENDENCIES", {}).results,
-                    "count": len(results.get("DEPENDENCIES", {}).results),
-                } if "DEPENDENCIES" in results else {},
-                "sast": {
-                    "vulnerabilities": results.get("SAST", {}).results,
-                    "summary": results.get("SAST", {}).summary.metadata or {},
-                } if "SAST" in results else {},
+                "secrets": (
+                    {
+                        "findings": results.get("SECRETS", {}).results,
+                        "count": len(results.get("SECRETS", {}).results),
+                    }
+                    if "SECRETS" in results
+                    else {}
+                ),
+                "dependencies": (
+                    {
+                        "missing_dependencies": results.get("DEPENDENCIES", {}).results,
+                        "count": len(results.get("DEPENDENCIES", {}).results),
+                    }
+                    if "DEPENDENCIES" in results
+                    else {}
+                ),
+                "sast": (
+                    {
+                        "vulnerabilities": results.get("SAST", {}).results,
+                        "summary": results.get("SAST", {}).summary.metadata or {},
+                    }
+                    if "SAST" in results
+                    else {}
+                ),
                 "path_scanned": path,
                 "scan_timestamp": self.request.id,
             }
@@ -187,6 +203,7 @@ def process_scan_results_async(self, scan_results: Dict[str, Any], scan_type: st
     """Asynchronous task to process and store scan results."""
     try:
         import asyncio
+
         from decoyable.core.registry import get_service_registry
 
         async def _process():
@@ -201,7 +218,7 @@ def process_scan_results_async(self, scan_results: Dict[str, Any], scan_type: st
                 await database_service.store_scan_results(
                     scan_type=scan_type,
                     results=scan_results,
-                    metadata={"processed_by": "task_queue", "task_id": self.request.id}
+                    metadata={"processed_by": "task_queue", "task_id": self.request.id},
                 )
 
             # Update cache if available
@@ -212,8 +229,8 @@ def process_scan_results_async(self, scan_results: Dict[str, Any], scan_type: st
                     value=scan_results,
                     ttl=3600,  # 1 hour
                     scan_type=scan_type,
-                    target_path=scan_results.get('path_scanned'),
-                    persist=True
+                    target_path=scan_results.get("path_scanned"),
+                    persist=True,
                 )
 
             return {

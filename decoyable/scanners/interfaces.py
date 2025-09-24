@@ -8,14 +8,15 @@ in the DECOYABLE system, providing a consistent API and dependency injection sup
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol, Union
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Protocol, Union
 
 from decoyable.core.logging import get_logger
 
 
 class ScanResult(Enum):
     """Result status of a scan operation."""
+
     SUCCESS = "success"
     FAILURE = "failure"
     PARTIAL = "partial"
@@ -23,6 +24,7 @@ class ScanResult(Enum):
 
 class ScannerType(Enum):
     """Types of security scanners available."""
+
     SECRETS = "secrets"
     DEPENDENCIES = "dependencies"
     SAST = "sast"
@@ -31,6 +33,7 @@ class ScannerType(Enum):
 @dataclass
 class ScanSummary:
     """Summary of scan results."""
+
     scanner_type: ScannerType
     total_items: int = 0
     issues_found: int = 0
@@ -42,6 +45,7 @@ class ScanSummary:
 @dataclass
 class ScanReport:
     """Complete scan report containing results and summary."""
+
     scanner_type: ScannerType
     results: List[Any]  # Specific result types per scanner
     summary: ScanSummary
@@ -51,6 +55,7 @@ class ScanReport:
 
 class ScannerConfig(Protocol):
     """Protocol for scanner configuration."""
+
     enabled: bool
     timeout_seconds: int
     max_file_size_mb: int
@@ -113,22 +118,23 @@ class BaseScanner(ABC):
 
         return True
 
-    async def _create_report(self, results: List[Any], scan_time_ms: float,
-                           result: ScanResult = ScanResult.SUCCESS,
-                           metadata: Optional[Dict[str, Any]] = None) -> ScanReport:
+    async def _create_report(
+        self,
+        results: List[Any],
+        scan_time_ms: float,
+        result: ScanResult = ScanResult.SUCCESS,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> ScanReport:
         """Create a standardized scan report."""
         summary = ScanSummary(
             scanner_type=self.scanner_type,
             total_items=len(results),
-            issues_found=len([r for r in results if hasattr(r, 'is_issue') and r.is_issue]) if results else 0,
+            issues_found=len([r for r in results if hasattr(r, "is_issue") and r.is_issue]) if results else 0,
             scan_time_ms=scan_time_ms,
             result=result,
-            metadata=metadata
+            metadata=metadata,
         )
 
         return ScanReport(
-            scanner_type=self.scanner_type,
-            results=results,
-            summary=summary,
-            timestamp=__import__('time').time()
+            scanner_type=self.scanner_type, results=results, summary=summary, timestamp=__import__("time").time()
         )

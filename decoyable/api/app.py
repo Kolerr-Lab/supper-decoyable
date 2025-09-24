@@ -27,8 +27,8 @@ def create_application() -> FastAPI:
     logging_service = setup_logging_service(config)
 
     # Register core services
-    registry.register_instance('config', config)
-    registry.register_instance('logging', logging_service)
+    registry.register_instance("config", config)
+    registry.register_instance("logging", logging_service)
 
     # Create API application with service injection
     app = create_api_app(config, registry, logging_service)
@@ -50,7 +50,7 @@ def main():
         port=config.api.port,
         reload=config.api.reload,
         workers=config.api.workers,
-        log_level=config.logging.level.lower()
+        log_level=config.logging.level.lower(),
     )
 
 

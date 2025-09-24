@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 # Import Kafka classes for patching in tests
 try:
     from aiokafka import AIOKafkaProducer
+
     KAFKA_AVAILABLE = True
 except ImportError:
     AIOKafkaProducer = None  # For patching in tests
@@ -32,7 +33,7 @@ class KafkaAttackProducer:
         self,
         bootstrap_servers: Optional[str] = None,
         topic: Optional[str] = None,
-        client_id: str = "decoyable-producer"
+        client_id: str = "decoyable-producer",
     ):
         self.bootstrap_servers = bootstrap_servers or settings.kafka_bootstrap_servers
         self.topic = topic or settings.kafka_attack_topic
@@ -49,9 +50,9 @@ class KafkaAttackProducer:
             self.producer = AIOKafkaProducer(
                 bootstrap_servers=self.bootstrap_servers,
                 client_id=self.client_id,
-                value_serializer=lambda v: json.dumps(v).encode('utf-8'),
-                key_serializer=lambda k: str(k).encode('utf-8') if k else None,
-                acks='all',  # Wait for all replicas
+                value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+                key_serializer=lambda k: str(k).encode("utf-8") if k else None,
+                acks="all",  # Wait for all replicas
                 retries=3,
                 max_in_flight_requests_per_connection=1,  # Ensure ordering
             )
@@ -95,15 +96,12 @@ class KafkaAttackProducer:
 
         try:
             # Add timestamp if not present
-            if 'timestamp' not in event:
+            if "timestamp" not in event:
                 import time
-                event['timestamp'] = time.time()
 
-            await self.producer.send_and_wait(
-                self.topic,
-                value=event,
-                key=key
-            )
+                event["timestamp"] = time.time()
+
+            await self.producer.send_and_wait(self.topic, value=event, key=key)
 
             logger.debug(f"Published attack event: {event.get('type', 'unknown')}")
             return True

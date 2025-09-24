@@ -10,11 +10,11 @@ import hashlib
 import json
 import logging
 import time
-from typing import Any, Dict, List, Optional, Union
 from functools import wraps
+from typing import Any, Dict, List, Optional, Union
 
-from decoyable.core.registry import ServiceRegistry
 from decoyable.cache import Cache
+from decoyable.core.registry import ServiceRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ class CacheService:
         ttl: Optional[int] = None,
         scan_type: Optional[str] = None,
         target_path: Optional[str] = None,
-        persist: bool = False
+        persist: bool = False,
     ) -> None:
         """
         Set value in cache.
@@ -135,11 +135,7 @@ class CacheService:
         if persist and self.database_service and scan_type and target_path:
             try:
                 await self.database_service.set_scan_cache(
-                    cache_key=key,
-                    scan_type=scan_type,
-                    target_path=target_path,
-                    results=value,
-                    ttl_seconds=ttl or 3600
+                    cache_key=key, scan_type=scan_type, target_path=target_path, results=value, ttl_seconds=ttl or 3600
                 )
                 logger.debug(f"Persisted cache entry to database: {key}")
             except Exception as e:
@@ -172,11 +168,7 @@ class CacheService:
         return deleted
 
     def cached(
-        self,
-        ttl: Optional[int] = None,
-        key_prefix: str = "",
-        scan_type: Optional[str] = None,
-        persist: bool = False
+        self, ttl: Optional[int] = None, key_prefix: str = "", scan_type: Optional[str] = None, persist: bool = False
     ):
         """
         Decorator to cache async function results.
@@ -211,14 +203,7 @@ class CacheService:
                     target_path = str(args[1]) if len(args) > 1 else str(args[0]) if args else None
 
                 # Cache the result
-                await self.set(
-                    cache_key,
-                    result,
-                    ttl,
-                    scan_type=scan_type,
-                    target_path=target_path,
-                    persist=persist
-                )
+                await self.set(cache_key, result, ttl, scan_type=scan_type, target_path=target_path, persist=persist)
                 return result
 
             return wrapper
@@ -244,18 +229,22 @@ class CacheService:
         if self.cache.redis_client:
             try:
                 info = self.cache.redis_client.info()
-                stats.update({
-                    "redis_connected": True,
-                    "redis_memory_used": info.get("used_memory_human", "unknown"),
-                    "redis_keys_count": self.cache.redis_client.dbsize(),
-                    "redis_uptime_days": info.get("uptime_in_days", 0),
-                })
+                stats.update(
+                    {
+                        "redis_connected": True,
+                        "redis_memory_used": info.get("used_memory_human", "unknown"),
+                        "redis_keys_count": self.cache.redis_client.dbsize(),
+                        "redis_uptime_days": info.get("uptime_in_days", 0),
+                    }
+                )
             except Exception as e:
                 stats.update({"redis_connected": False, "redis_error": str(e)})
         else:
-            stats.update({
-                "memory_cache_entries": len(self.cache.memory_cache),
-            })
+            stats.update(
+                {
+                    "memory_cache_entries": len(self.cache.memory_cache),
+                }
+            )
 
         # Database cache stats
         if self.database_service:
@@ -291,27 +280,21 @@ class CacheService:
 
             # Warm up secrets scan
             secrets_result = await scanner_service.scan_secrets([target_path])
-            operations.append({
-                "operation": "secrets_scan",
-                "cached": True,
-                "items": len(secrets_result)
-            })
+            operations.append({"operation": "secrets_scan", "cached": True, "items": len(secrets_result)})
 
             # Warm up dependencies scan
             deps_result = await scanner_service.scan_dependencies(target_path)
-            operations.append({
-                "operation": "deps_scan",
-                "cached": True,
-                "items": deps_result.get("count", 0)
-            })
+            operations.append({"operation": "deps_scan", "cached": True, "items": deps_result.get("count", 0)})
 
             # Warm up SAST scan
             sast_result = await scanner_service.scan_sast(target_path)
-            operations.append({
-                "operation": "sast_scan",
-                "cached": True,
-                "vulnerabilities": sast_result.get("summary", {}).get("total_vulnerabilities", 0)
-            })
+            operations.append(
+                {
+                    "operation": "sast_scan",
+                    "cached": True,
+                    "vulnerabilities": sast_result.get("summary", {}).get("total_vulnerabilities", 0),
+                }
+            )
 
         except Exception as e:
             logger.error(f"Cache warmup failed: {e}")

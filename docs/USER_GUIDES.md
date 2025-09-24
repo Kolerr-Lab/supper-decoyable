@@ -22,6 +22,7 @@ This guide provides **practical, end-to-end examples** of how different users ca
 ## Quick Start Overview
 
 ### Prerequisites
+
 - Python 3.8+
 - Docker & Docker Compose (for full deployments)
 - OpenAI API key (optional, falls back to pattern matching)
@@ -29,6 +30,7 @@ This guide provides **practical, end-to-end examples** of how different users ca
 ### Quick Setup Commands
 
 **Unix/Linux/macOS:**
+
 ```bash
 git clone https://github.com/Kolerr-Lab/supper-decoyable.git
 cd supper-decoyable
@@ -36,6 +38,7 @@ cd supper-decoyable
 ```
 
 **Windows PowerShell:**
+
 ```powershell
 git clone https://github.com/Kolerr-Lab/supper-decoyable.git
 cd supper-decoyable
@@ -48,12 +51,14 @@ pytest -q
 
 ## Example 1: Developer Onboarding & Code Security
 
-### Scenario
+### Scenario: Developer Onboarding
+
 New developer joining the team wants to secure their codebase before deployment.
 
 ### End-to-End Workflow
 
 #### 1. Initial Setup (5 minutes)
+
 ```bash
 # Clone and setup environment
 git clone https://github.com/Kolerr-Lab/supper-decoyable.git
@@ -65,6 +70,7 @@ cd supper-decoyable
 ```
 
 #### 2. Scan Local Codebase (2 minutes)
+
 ```bash
 # Run comprehensive security scan
 python main.py scan all --path /path/to/my-app --output scan-results.json
@@ -75,6 +81,7 @@ cat scan-results.json | jq '.summary'
 ```
 
 #### 3. Fix Issues & Re-scan (10 minutes)
+
 ```bash
 # Fix identified issues (e.g., remove hardcoded secrets, update vulnerable deps)
 # Then re-scan to verify
@@ -84,6 +91,7 @@ python main.py scan all --path /path/to/my-app
 ```
 
 #### 4. API Integration (Optional)
+
 ```bash
 # Start DECOYABLE API for CI/CD integration
 docker-compose up -d
@@ -95,18 +103,21 @@ curl -X POST "http://localhost:8000/scan/secrets" \
 ```
 
 ### Outcome
+
 Developer has secure, scan-verified code ready for deployment.
 
 ---
 
 ## Example 2: Security Team Daily Monitoring
 
-### Scenario
+### Scenario: Security Team Monitoring
+
 SOC analyst monitoring infrastructure for threats using DECOYABLE's active defense.
 
 ### End-to-End Workflow
 
 #### 1. Morning Setup & Status Check (5 minutes)
+
 ```bash
 # Connect to production DECOYABLE instance
 ssh security@decoyable-prod
@@ -120,6 +131,7 @@ decoyable defense logs --hours 12 --format table
 ```
 
 #### 2. Monitor Real-time Activity (Throughout Day)
+
 ```bash
 # Set up continuous monitoring dashboard
 watch -n 60 'decoyable defense status && echo "--- Recent Attacks ---" && decoyable defense logs --limit 5'
@@ -130,6 +142,7 @@ decoyable defense llm-status
 ```
 
 #### 3. Respond to Alerts (As Needed)
+
 ```bash
 # When alert triggers, investigate
 decoyable defense logs --limit 1 --format json | jq '.'
@@ -142,6 +155,7 @@ decoyable defense status | grep "blocked_ips"
 ```
 
 #### 4. End-of-Day Reporting (5 minutes)
+
 ```bash
 # Generate daily security report
 decoyable defense logs --days 1 --format json > daily_report_$(date +%Y%m%d).json
@@ -153,18 +167,21 @@ curl -X POST https://soc-dashboard.company.com/api/reports \
 ```
 
 ### Outcome
+
 Continuous threat monitoring with automated response and daily reporting.
 
 ---
 
 ## Example 3: Incident Response Team
 
-### Scenario
+### Scenario: Incident Response
+
 Security incident detected - unknown actor probing infrastructure.
 
 ### End-to-End Workflow
 
 #### 1. Initial Assessment (2 minutes)
+
 ```bash
 # Check recent attack patterns
 decoyable defense logs --minutes 30 --format table
@@ -175,6 +192,7 @@ decoyable defense patterns | grep "attack_type"
 ```
 
 #### 2. Deep Investigation (5 minutes)
+
 ```bash
 # Get detailed attack data
 decoyable defense logs --ip 10.0.0.50 --format json > investigation_data.json
@@ -186,6 +204,7 @@ done
 ```
 
 #### 3. Containment Actions (3 minutes)
+
 ```bash
 # Block attacking IP with evidence
 decoyable defense block-ip 10.0.0.50 --reason "Coordinated attack pattern detected"
@@ -200,6 +219,7 @@ curl -X POST https://pagerduty.com/api/v2/incidents \
 ```
 
 #### 4. Post-Incident Analysis (10 minutes)
+
 ```bash
 # Export full incident data
 decoyable defense logs --ip 10.0.0.50 --days 7 > incident_report.json
@@ -215,18 +235,21 @@ decoyable defense patterns > current_patterns.txt
 ```
 
 ### Outcome
+
 Rapid incident containment with comprehensive documentation and intelligence sharing.
 
 ---
 
 ## Example 4: Enterprise Production Deployment
 
-### Scenario
+### Scenario: Enterprise Deployment
+
 DevOps team deploying DECOYABLE across enterprise infrastructure.
 
 ### End-to-End Workflow
 
 #### 1. Infrastructure Planning (15 minutes)
+
 ```bash
 # Design deployment architecture
 # - DECOYABLE API: Kubernetes service
@@ -245,6 +268,7 @@ EOF
 ```
 
 #### 2. Containerized Deployment (10 minutes)
+
 ```bash
 # Build production images
 docker build -t company/decoyable:latest -f docker/Dockerfile.prod .
@@ -261,6 +285,7 @@ kubectl logs -l app=decoyable --tail=20
 ```
 
 #### 3. Integration Setup (10 minutes)
+
 ```bash
 # Configure SIEM integration
 curl -X POST "https://splunk.company.com/api/services/collector" \
@@ -277,6 +302,7 @@ curl -X POST "http://decoyable.company.com/test-integration"
 ```
 
 #### 4. Operational Handover (5 minutes)
+
 ```bash
 # Create runbooks for security team
 cat > runbook.md << EOF
@@ -299,18 +325,21 @@ EOF
 ```
 
 ### Outcome
+
 Enterprise-grade deployment with full monitoring, alerting, and operational procedures.
 
 ---
 
 ## Example 5: CI/CD Pipeline Integration
 
-### Scenario
+### Scenario: CI/CD Integration
+
 Development team integrating DECOYABLE security scans into automated pipelines.
 
 ### End-to-End Workflow
 
 #### 1. Pipeline Configuration (10 minutes)
+
 ```yaml
 # .github/workflows/security-scan.yml
 name: Security Scan
@@ -343,6 +372,7 @@ jobs:
 ```
 
 #### 2. Quality Gate Implementation (5 minutes)
+
 ```yaml
 # Add quality gate
       - name: Security Quality Gate
@@ -360,6 +390,7 @@ jobs:
 ```
 
 #### 3. Results Integration (5 minutes)
+
 ```yaml
       - name: Comment PR with Results
         uses: actions/github-script@v6
@@ -383,6 +414,7 @@ jobs:
 ```
 
 #### 4. Dashboard Integration (Optional)
+
 ```bash
 # Send results to security dashboard
 curl -X POST "https://security-dashboard.company.com/api/scan-results" \
@@ -393,6 +425,7 @@ curl -X POST "https://security-dashboard.company.com/api/scan-results" \
 ```
 
 ### Outcome
+
 Automated security scanning integrated into development workflow with quality gates and reporting.
 
 ---
@@ -400,6 +433,7 @@ Automated security scanning integrated into development workflow with quality ga
 ## Common Patterns & Best Practices
 
 ### Setup Pattern
+
 ```bash
 # Always start with environment check
 ./run_full_check.sh  # Development
@@ -408,6 +442,7 @@ docker-compose up -d  # Production
 ```
 
 ### Monitoring Pattern
+
 ```bash
 # Regular health checks
 decoyable defense status
@@ -418,6 +453,7 @@ decoyable defense logs --hours 24
 ```
 
 ### Response Pattern
+
 ```bash
 # Investigation
 decoyable defense logs --ip <suspicious_ip> --format json
@@ -430,6 +466,7 @@ decoyable defense analyze <capture_id>
 ```
 
 ### Reporting Pattern
+
 ```bash
 # Export data
 decoyable defense logs --days 7 --format json > weekly_report.json
@@ -454,6 +491,7 @@ curl -X POST $WEBHOOK_URL -d @weekly_report.json
 ### Common Issues
 
 #### API Authentication Errors
+
 ```bash
 # Check if API_AUTH_TOKEN is set
 echo $API_AUTH_TOKEN
@@ -463,6 +501,7 @@ python -c "import base64; print('Valid' if len('$API_AUTH_TOKEN') >= 32 else 'To
 ```
 
 #### Docker Deployment Issues
+
 ```bash
 # Check container status
 docker-compose ps
@@ -475,6 +514,7 @@ docker-compose restart
 ```
 
 #### LLM Provider Failures
+
 ```bash
 # Check provider status
 decoyable defense llm-status
@@ -486,6 +526,7 @@ curl -X POST "http://localhost:8000/analysis/test-provider" \
 ```
 
 #### High False Positive Rate
+
 ```bash
 # Review recent blocks
 decoyable defense logs --blocked-only --days 7

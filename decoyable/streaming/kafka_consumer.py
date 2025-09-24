@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 # Import Kafka classes for patching in tests
 try:
     from aiokafka import AIOKafkaConsumer
+
     KAFKA_AVAILABLE = True
 except ImportError:
     AIOKafkaConsumer = None  # For patching in tests
@@ -53,9 +54,9 @@ class AttackEventConsumer:
                 self.topic,
                 bootstrap_servers=settings.kafka_bootstrap_servers,
                 group_id=self.group_id,
-                value_deserializer=lambda v: json.loads(v.decode('utf-8')),
-                key_deserializer=lambda k: k.decode('utf-8') if k else None,
-                auto_offset_reset='latest',  # Start from latest to avoid backlogs
+                value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+                key_deserializer=lambda k: k.decode("utf-8") if k else None,
+                auto_offset_reset="latest",  # Start from latest to avoid backlogs
                 enable_auto_commit=True,
                 auto_commit_interval_ms=1000,
                 max_poll_records=10,  # Process in small batches
@@ -112,24 +113,24 @@ class AttackEventConsumer:
 
     async def _process_event(self, event: Dict[str, Any]) -> None:
         """Process individual events based on consumer type."""
-        event_type = event.get('event_type')
-        data = event.get('data', {})
+        event_type = event.get("event_type")
+        data = event.get("data", {})
 
-        if self.consumer_type == 'analysis':
+        if self.consumer_type == "analysis":
             await self._process_analysis_event(event_type, data)
-        elif self.consumer_type == 'alerts':
+        elif self.consumer_type == "alerts":
             await self._process_alert_event(event_type, data)
-        elif self.consumer_type == 'persistence':
+        elif self.consumer_type == "persistence":
             await self._process_persistence_event(event_type, data)
         else:
             logger.warning(f"Unknown consumer type: {self.consumer_type}")
 
     async def _process_analysis_event(self, event_type: str, data: Dict[str, Any]) -> None:
         """Process events for AI/LLM analysis."""
-        if event_type == 'attack_detected':
+        if event_type == "attack_detected":
             # Import here to avoid circular imports
-            from decoyable.defense.analysis import analyze_attack_async
             from decoyable.defense.adaptive_defense import apply_adaptive_defense
+            from decoyable.defense.analysis import analyze_attack_async
 
             try:
                 # Perform AI analysis
@@ -145,16 +146,13 @@ class AttackEventConsumer:
 
     async def _process_alert_event(self, event_type: str, data: Dict[str, Any]) -> None:
         """Process events for SOC/SIEM alert forwarding."""
-        if event_type in ('attack_detected', 'security_alert'):
+        if event_type in ("attack_detected", "security_alert"):
             # Import here to avoid circular imports
             from decoyable.defense.honeypot import forward_alert
 
             try:
                 # Forward to SOC/SIEM (with timeout)
-                await asyncio.wait_for(
-                    forward_alert(data),
-                    timeout=10.0  # Longer timeout for async processing
-                )
+                await asyncio.wait_for(forward_alert(data), timeout=10.0)  # Longer timeout for async processing
 
                 logger.debug(f"Alert forwarded for {event_type}")
 
@@ -169,12 +167,12 @@ class AttackEventConsumer:
             # Import here to avoid circular imports
             from decoyable.defense.knowledge_base import knowledge_base
 
-            if event_type == 'attack_detected':
+            if event_type == "attack_detected":
                 # Store attack data in knowledge base
                 attack_id = knowledge_base.store_attack(data)
                 logger.debug(f"Attack stored with ID: {attack_id}")
 
-            elif event_type == 'security_alert':
+            elif event_type == "security_alert":
                 # Store alert data
                 alert_id = knowledge_base.store_alert(data)
                 logger.debug(f"Alert stored with ID: {alert_id}")
@@ -184,9 +182,9 @@ class AttackEventConsumer:
 
 
 # Consumer instances for different processing types
-analysis_consumer = AttackEventConsumer('analysis')
-alert_consumer = AttackEventConsumer('alerts')
-persistence_consumer = AttackEventConsumer('persistence')
+analysis_consumer = AttackEventConsumer("analysis")
+alert_consumer = AttackEventConsumer("alerts")
+persistence_consumer = AttackEventConsumer("persistence")
 
 
 async def start_all_consumers() -> None:

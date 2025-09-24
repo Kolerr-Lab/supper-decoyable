@@ -22,7 +22,6 @@ from decoyable.core.config import Settings
 from decoyable.core.logging import LoggingService, get_logger
 from decoyable.core.registry import ServiceRegistry
 
-
 # SQLAlchemy Base for models
 Base = declarative_base()
 
@@ -63,12 +62,7 @@ class ScanCache(Base):
 class DatabaseService:
     """Database service with async operations and connection pooling."""
 
-    def __init__(
-        self,
-        config: Settings,
-        registry: ServiceRegistry,
-        logging_service: LoggingService
-    ):
+    def __init__(self, config: Settings, registry: ServiceRegistry, logging_service: LoggingService):
         self.config = config
         self.registry = registry
         self.logging_service = logging_service
@@ -132,11 +126,7 @@ class DatabaseService:
                 )
 
             # Create async session factory
-            self.AsyncSessionLocal = sessionmaker(
-                self.async_engine,
-                class_=AsyncSession,
-                expire_on_commit=False
-            )
+            self.AsyncSessionLocal = sessionmaker(self.async_engine, class_=AsyncSession, expire_on_commit=False)
 
             # Also create sync engine for backward compatibility
             self.sync_engine = create_engine(
@@ -150,11 +140,7 @@ class DatabaseService:
                 echo=self.config.database.echo,
             )
 
-            self.SessionLocal = sessionmaker(
-                autocommit=False,
-                autoflush=False,
-                bind=self.sync_engine
-            )
+            self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.sync_engine)
 
             # Create tables asynchronously
             async with self.async_engine.begin() as conn:
@@ -329,10 +315,7 @@ class DatabaseService:
     async def get_scan_cache_async(self, cache_key: str) -> Optional[Dict[str, Any]]:
         """Get cached scan result asynchronously."""
         async with self.get_async_session() as session:
-            stmt = select(ScanCache).where(
-                ScanCache.cache_key == cache_key,
-                ScanCache.expires_at > func.now()
-            )
+            stmt = select(ScanCache).where(ScanCache.cache_key == cache_key, ScanCache.expires_at > func.now())
             result = await session.execute(stmt)
             cache_entry = result.scalar_one_or_none()
 
@@ -414,8 +397,8 @@ class DatabaseService:
 
                 # Get recent activity (last 24 hours)
                 yesterday = datetime.utcnow() - timedelta(days=1)
-                recent_scans_stmt = select(func.count()).select_from(ScanResult).where(
-                    ScanResult.created_at >= yesterday
+                recent_scans_stmt = (
+                    select(func.count()).select_from(ScanResult).where(ScanResult.created_at >= yesterday)
                 )
                 recent_scans = await session.scalar(recent_scans_stmt)
 

@@ -2,6 +2,8 @@ DECOYABLE - Command Cheat Sheet
 Location: /g:/TECH/DECOYABLE/command.txt
 Purpose: quick reference of common commands used across the project. Replace placeholders as needed.
 
+uvicorn decoyable.api.app:app --reload
+
 -- Setup --
 # clone repository
 git clone https://example.com/your-org/decoyable.git
@@ -67,7 +69,7 @@ npm run dev
 python -m src.app
 -- Run FastAPI --
 # Start FastAPI app with Uvicorn
-uvicorn decoyable.api.app:app --reload 
+uvicorn decoyable.api.app:app --reload
 
 # Run DECOYABLE CLI
 # Scan for secrets

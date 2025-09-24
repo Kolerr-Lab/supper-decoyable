@@ -7,11 +7,12 @@ and enterprise-grade validation.
 """
 
 import asyncio
-import pytest
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
-from decoyable.core.registry import ServiceRegistry
+import pytest
+
 from decoyable.core.config import Settings
+from decoyable.core.registry import ServiceRegistry
 
 
 class TestServiceRegistry:
@@ -61,18 +62,13 @@ class TestServiceRegistry:
 class TestServiceInitialization:
     """Test service initialization and startup."""
 
-    @patch('decoyable.scanners.service.ScannerService')
-    @patch('decoyable.core.database_service.DatabaseService')
-    @patch('decoyable.core.task_queue_service.TaskQueueService')
-    @patch('decoyable.core.streaming_service.StreamingService')
-    @patch('decoyable.core.cache_service.CacheService')
+    @patch("decoyable.scanners.service.ScannerService")
+    @patch("decoyable.core.database_service.DatabaseService")
+    @patch("decoyable.core.task_queue_service.TaskQueueService")
+    @patch("decoyable.core.streaming_service.StreamingService")
+    @patch("decoyable.core.cache_service.CacheService")
     def test_all_services_initialize(
-        self,
-        cache_mock,
-        streaming_mock,
-        task_queue_mock,
-        database_service_mock,
-        scanner_service_mock
+        self, cache_mock, streaming_mock, task_queue_mock, database_service_mock, scanner_service_mock
     ):
         """Test that all core services can be initialized."""
         from decoyable.core.main import setup_services
@@ -88,9 +84,9 @@ class TestServiceInitialization:
         config, registry, cli_service = setup_services()
 
         # Verify services are registered
-        assert registry.get_by_name('config') is config
-        assert registry.get_by_name('registry') is registry
-        assert registry.get_by_name('cli_service') is cli_service
+        assert registry.get_by_name("config") is config
+        assert registry.get_by_name("registry") is registry
+        assert registry.get_by_name("cli_service") is cli_service
 
         # Verify service mocks were called
         cache_mock.assert_called_once()
@@ -106,9 +102,9 @@ class TestServiceInitialization:
         config, registry, cli_service = setup_services()
 
         # Core services should still be available
-        assert registry.get_by_name('config') is config
-        assert registry.get_by_name('registry') is registry
-        assert registry.get_by_name('cli_service') is cli_service
+        assert registry.get_by_name("config") is config
+        assert registry.get_by_name("registry") is registry
+        assert registry.get_by_name("cli_service") is cli_service
 
 
 class TestStreamingService:
@@ -124,16 +120,17 @@ class TestStreamingService:
         """Create a test config."""
         # Set environment variable to disable Kafka
         import os
-        old_value = os.environ.get('KAFKA_ENABLED')
-        os.environ['KAFKA_ENABLED'] = 'false'
+
+        old_value = os.environ.get("KAFKA_ENABLED")
+        os.environ["KAFKA_ENABLED"] = "false"
 
         config = Settings()
 
         # Restore environment variable
         if old_value is None:
-            os.environ.pop('KAFKA_ENABLED', None)
+            os.environ.pop("KAFKA_ENABLED", None)
         else:
-            os.environ['KAFKA_ENABLED'] = old_value
+            os.environ["KAFKA_ENABLED"] = old_value
 
         return config
 
@@ -142,9 +139,9 @@ class TestStreamingService:
         from decoyable.core.streaming_service import StreamingService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = StreamingService(registry)
 
@@ -159,9 +156,9 @@ class TestStreamingService:
         from decoyable.core.streaming_service import StreamingService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = StreamingService(registry)
         await service.initialize()
@@ -175,19 +172,15 @@ class TestStreamingService:
         from decoyable.core.streaming_service import StreamingService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = StreamingService(registry)
         await service.initialize()
 
         # Publishing should succeed even without Kafka
-        success = await service.publish_attack_event(
-            "test_event",
-            {"test": "data"},
-            key="test_key"
-        )
+        success = await service.publish_attack_event("test_event", {"test": "data"}, key="test_key")
 
         # Should return False since producer is disabled
         assert success is False
@@ -198,19 +191,16 @@ class TestStreamingService:
         from decoyable.core.streaming_service import StreamingService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = StreamingService(registry)
         await service.initialize()
 
         # Publishing alert should work
         success = await service.publish_security_alert(
-            alert_type="test_alert",
-            severity="high",
-            message="Test security alert",
-            source_ip="192.168.1.1"
+            alert_type="test_alert", severity="high", message="Test security alert", source_ip="192.168.1.1"
         )
 
         assert success is False  # Kafka disabled
@@ -221,9 +211,9 @@ class TestStreamingService:
         from decoyable.core.streaming_service import StreamingService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = StreamingService(registry)
         await service.initialize()
@@ -241,9 +231,9 @@ class TestStreamingService:
         from decoyable.core.streaming_service import StreamingService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = StreamingService(registry)
         await service.initialize()
@@ -275,10 +265,10 @@ class TestHoneypotService:
         from decoyable.core.honeypot_service import HoneypotService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('streaming_service', Mock())
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("streaming_service", Mock())
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = HoneypotService(registry)
 
@@ -293,10 +283,10 @@ class TestHoneypotService:
         from decoyable.core.honeypot_service import HoneypotService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('streaming_service', Mock())
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("streaming_service", Mock())
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = HoneypotService(registry)
         await service.initialize()
@@ -312,20 +302,15 @@ class TestHoneypotService:
         # Register dependencies
         streaming_mock = AsyncMock()
         database_mock = AsyncMock()
-        registry.register_instance('config', config)
-        registry.register_instance('streaming_service', streaming_mock)
-        registry.register_instance('database_service', database_mock)
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("streaming_service", streaming_mock)
+        registry.register_instance("database_service", database_mock)
+        registry.register_instance("cache_service", Mock())
 
         service = HoneypotService(registry)
         await service.initialize()
 
-        attack_data = {
-            "ip_address": "192.168.1.100",
-            "method": "GET",
-            "path": "/admin",
-            "user_agent": "Test Agent"
-        }
+        attack_data = {"ip_address": "192.168.1.100", "method": "GET", "path": "/admin", "user_agent": "Test Agent"}
 
         result = await service.process_attack(attack_data)
 
@@ -342,10 +327,10 @@ class TestHoneypotService:
         from decoyable.core.honeypot_service import HoneypotService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('streaming_service', Mock())
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("streaming_service", Mock())
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = HoneypotService(registry)
         await service.initialize()
@@ -360,16 +345,16 @@ class TestHoneypotService:
         from decoyable.core.honeypot_service import HoneypotService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('streaming_service', Mock())
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("streaming_service", Mock())
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = HoneypotService(registry)
         await service.initialize()
 
         # Mock iptables to avoid system calls
-        with patch('asyncio.create_subprocess_exec') as mock_subprocess:
+        with patch("asyncio.create_subprocess_exec") as mock_subprocess:
             mock_proc = AsyncMock()
             mock_proc.wait.return_value = 0  # Success
             mock_subprocess.return_value = mock_proc
@@ -387,10 +372,10 @@ class TestHoneypotService:
         from decoyable.core.honeypot_service import HoneypotService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('streaming_service', Mock())
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("streaming_service", Mock())
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = HoneypotService(registry)
         await service.initialize()
@@ -409,10 +394,10 @@ class TestHoneypotService:
         from decoyable.core.honeypot_service import HoneypotService
 
         # Register dependencies
-        registry.register_instance('config', config)
-        registry.register_instance('streaming_service', Mock())
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("streaming_service", Mock())
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         service = HoneypotService(registry)
         await service.initialize()
@@ -427,7 +412,7 @@ class TestHoneypotService:
 class TestCLIServiceIntegration:
     """Test CLI service integration with all services."""
 
-    @patch('decoyable.core.main.setup_services')
+    @patch("decoyable.core.main.setup_services")
     def test_cli_service_commands(self, setup_services_mock):
         """Test that CLI service can handle all command types."""
         from decoyable.core.cli_service import CLIService
@@ -439,44 +424,46 @@ class TestCLIServiceIntegration:
         logging_mock = Mock()
 
         # Register mock services
-        registry_mock.register_instance('streaming_service', Mock())
-        registry_mock.register_instance('honeypot_service', Mock())
-        registry_mock.register_instance('task_queue_service', Mock())
-        registry_mock.register_instance('scanner_service', Mock())
-        registry_mock.register_instance('database_service', Mock())
+        registry_mock.register_instance("streaming_service", Mock())
+        registry_mock.register_instance("honeypot_service", Mock())
+        registry_mock.register_instance("task_queue_service", Mock())
+        registry_mock.register_instance("scanner_service", Mock())
+        registry_mock.register_instance("database_service", Mock())
 
         setup_services_mock.return_value = (config_mock, registry_mock, None)
 
         cli_service = CLIService(config_mock, registry_mock, logging_mock)
 
         # Test that service methods exist
-        assert hasattr(cli_service, 'run_streaming_command')
-        assert hasattr(cli_service, 'run_honeypot_command')
-        assert hasattr(cli_service, 'run_task_command')
-        assert hasattr(cli_service, 'run_scan_command')
+        assert hasattr(cli_service, "run_streaming_command")
+        assert hasattr(cli_service, "run_honeypot_command")
+        assert hasattr(cli_service, "run_task_command")
+        assert hasattr(cli_service, "run_scan_command")
 
     def test_command_dispatching(self):
         """Test that commands are properly dispatched."""
-        from decoyable.core.main import main
         import sys
+
+        from decoyable.core.main import main
 
         # Mock sys.argv to test command parsing
         original_argv = sys.argv
         try:
             # Test streaming command parsing
-            sys.argv = ['decoyable', 'streaming', 'status']
+            sys.argv = ["decoyable", "streaming", "status"]
             # This would normally call the CLI, but we'll just test argument parsing
             from decoyable.core.main import build_arg_parser
-            parser = build_arg_parser()
-            args = parser.parse_args(['streaming', 'status'])
 
-            assert args.command == 'streaming'
-            assert args.streaming_command == 'status'
+            parser = build_arg_parser()
+            args = parser.parse_args(["streaming", "status"])
+
+            assert args.command == "streaming"
+            assert args.streaming_command == "status"
 
             # Test honeypot command parsing
-            args = parser.parse_args(['honeypot', 'status'])
-            assert args.command == 'honeypot'
-            assert args.honeypot_command == 'status'
+            args = parser.parse_args(["honeypot", "status"])
+            assert args.command == "honeypot"
+            assert args.honeypot_command == "status"
 
         finally:
             sys.argv = original_argv
@@ -494,14 +481,15 @@ class TestPerformanceValidation:
     async def test_service_initialization_performance(self, registry):
         """Test that services initialize within performance requirements."""
         import time
-        from decoyable.core.streaming_service import StreamingService
+
         from decoyable.core.honeypot_service import HoneypotService
+        from decoyable.core.streaming_service import StreamingService
 
         config = Settings()
-        registry.register_instance('config', config)
-        registry.register_instance('streaming_service', Mock())
-        registry.register_instance('database_service', Mock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("streaming_service", Mock())
+        registry.register_instance("database_service", Mock())
+        registry.register_instance("cache_service", Mock())
 
         # Test streaming service init performance
         start_time = time.time()
@@ -525,23 +513,19 @@ class TestPerformanceValidation:
     async def test_attack_processing_performance(self, registry):
         """Test attack processing performance meets latency requirements."""
         import time
+
         from decoyable.core.honeypot_service import HoneypotService
 
         config = Settings()
-        registry.register_instance('config', config)
-        registry.register_instance('streaming_service', AsyncMock())
-        registry.register_instance('database_service', AsyncMock())
-        registry.register_instance('cache_service', Mock())
+        registry.register_instance("config", config)
+        registry.register_instance("streaming_service", AsyncMock())
+        registry.register_instance("database_service", AsyncMock())
+        registry.register_instance("cache_service", Mock())
 
         service = HoneypotService(registry)
         await service.initialize()
 
-        attack_data = {
-            "ip_address": "192.168.1.100",
-            "method": "GET",
-            "path": "/admin",
-            "user_agent": "Test Agent"
-        }
+        attack_data = {"ip_address": "192.168.1.100", "method": "GET", "path": "/admin", "user_agent": "Test Agent"}
 
         # Test processing performance
         start_time = time.time()
@@ -567,7 +551,7 @@ class TestErrorHandling:
         from decoyable.core.streaming_service import StreamingService
 
         config = Settings()
-        registry.register_instance('config', config)
+        registry.register_instance("config", config)
 
         # Don't register required dependencies
         service = StreamingService(registry)
@@ -586,10 +570,10 @@ class TestErrorHandling:
         from decoyable.core.honeypot_service import HoneypotService
 
         config = Settings()
-        registry.register_instance('config', config)
+        registry.register_instance("config", config)
 
         # Register some dependencies but not others
-        registry.register_instance('streaming_service', Mock())
+        registry.register_instance("streaming_service", Mock())
         # Missing database_service and cache_service
 
         service = HoneypotService(registry)

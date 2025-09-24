@@ -22,10 +22,9 @@ from typing import Any, Dict, Optional, Union
 
 from decoyable.core.config import Settings
 
-
 # Context variables for correlation IDs and request context
-correlation_id: ContextVar[Optional[str]] = ContextVar('correlation_id', default=None)
-request_context: ContextVar[Optional[Dict[str, Any]]] = ContextVar('request_context', default=None)
+correlation_id: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
+request_context: ContextVar[Optional[Dict[str, Any]]] = ContextVar("request_context", default=None)
 
 
 class StructuredFormatter(logging.Formatter):
@@ -68,14 +67,31 @@ class StructuredFormatter(logging.Formatter):
         if self.include_extra:
             for key, value in record.__dict__.items():
                 if key not in {
-                    'name', 'msg', 'args', 'levelname', 'levelno', 'pathname',
-                    'filename', 'module', 'exc_info', 'exc_text', 'stack_info',
-                    'lineno', 'funcName', 'created', 'msecs', 'relativeCreated',
-                    'thread', 'threadName', 'processName', 'process', 'message'
+                    "name",
+                    "msg",
+                    "args",
+                    "levelname",
+                    "levelno",
+                    "pathname",
+                    "filename",
+                    "module",
+                    "exc_info",
+                    "exc_text",
+                    "stack_info",
+                    "lineno",
+                    "funcName",
+                    "created",
+                    "msecs",
+                    "relativeCreated",
+                    "thread",
+                    "threadName",
+                    "processName",
+                    "process",
+                    "message",
                 }:
                     log_entry[key] = value
 
-        return json.dumps(log_entry, default=str, separators=(',', ':'))
+        return json.dumps(log_entry, default=str, separators=(",", ":"))
 
 
 class PerformanceFormatter(logging.Formatter):
@@ -89,20 +105,20 @@ class PerformanceFormatter(logging.Formatter):
             "timestamp": self.formatTime(record, "%Y-%m-%dT%H:%M:%S") + "Z",
             "level": "PERFORMANCE",
             "logger": record.name,
-            "operation": getattr(record, 'operation', 'unknown'),
-            "duration_ms": getattr(record, 'duration_ms', 0),
-            "success": getattr(record, 'success', True),
+            "operation": getattr(record, "operation", "unknown"),
+            "duration_ms": getattr(record, "duration_ms", 0),
+            "success": getattr(record, "success", True),
         }
 
         if corr_id:
             perf_entry["correlation_id"] = corr_id
 
         # Add extra performance metrics
-        for key in ['cpu_percent', 'memory_mb', 'io_read_mb', 'io_write_mb']:
+        for key in ["cpu_percent", "memory_mb", "io_read_mb", "io_write_mb"]:
             if hasattr(record, key):
                 perf_entry[key] = getattr(record, key)
 
-        return json.dumps(perf_entry, default=str, separators=(',', ':'))
+        return json.dumps(perf_entry, default=str, separators=(",", ":"))
 
 
 class LoggerAdapter(logging.LoggerAdapter):
@@ -116,12 +132,12 @@ class LoggerAdapter(logging.LoggerAdapter):
         # Add correlation ID to extra
         corr_id = correlation_id.get()
         if corr_id:
-            kwargs.setdefault('extra', {})['correlation_id'] = corr_id
+            kwargs.setdefault("extra", {})["correlation_id"] = corr_id
 
         # Add request context
         ctx = request_context.get()
         if ctx:
-            kwargs.setdefault('extra', {}).update(ctx)
+            kwargs.setdefault("extra", {}).update(ctx)
 
         return msg, kwargs
 
@@ -168,7 +184,7 @@ class LoggingService:
                     filename=str(log_path),
                     maxBytes=self.config.logging.file_max_size_mb * 1024 * 1024,
                     backupCount=self.config.logging.file_backup_count,
-                    encoding='utf-8'
+                    encoding="utf-8",
                 )
                 file_handler.setLevel(getattr(logging, self.config.logging.file_level.upper(), logging.INFO))
                 file_handler.setFormatter(structured_formatter)
@@ -183,11 +199,11 @@ class LoggingService:
                     filename=str(perf_path),
                     maxBytes=self.config.logging.performance_max_size_mb * 1024 * 1024,
                     backupCount=self.config.logging.performance_backup_count,
-                    encoding='utf-8'
+                    encoding="utf-8",
                 )
                 perf_handler.setLevel(logging.INFO)
                 perf_handler.setFormatter(performance_formatter)
-                perf_handler.addFilter(lambda record: hasattr(record, 'operation'))
+                perf_handler.addFilter(lambda record: hasattr(record, "operation"))
                 root_logger.addHandler(perf_handler)
 
             self._setup_complete = True
@@ -224,12 +240,7 @@ class LoggingService:
     def log_performance(self, operation: str, duration_ms: float, success: bool = True, **metrics):
         """Log performance metrics."""
         logger = self.get_logger("performance")
-        extra = {
-            'operation': operation,
-            'duration_ms': duration_ms,
-            'success': success,
-            **metrics
-        }
+        extra = {"operation": operation, "duration_ms": duration_ms, "success": success, **metrics}
         logger.info(f"Performance: {operation}", extra=extra)
 
 

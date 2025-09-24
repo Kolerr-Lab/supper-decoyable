@@ -7,12 +7,13 @@ Supports environment variables and .env files with type safety.
 """
 
 import os
-from typing import List, Optional, Dict, Any
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # Load environment variables from .env file at module level
 try:
     from dotenv import load_dotenv
+
     PROJECT_ROOT = Path(__file__).parent.parent.parent
     ENV_FILE = PROJECT_ROOT / ".env"
     load_dotenv(ENV_FILE)
@@ -22,18 +23,22 @@ except ImportError:
     ENV_FILE = PROJECT_ROOT / ".env"
 
 try:
-    from pydantic import Field, validator, ValidationError
+    from pydantic import Field, ValidationError, validator
     from pydantic_settings import BaseSettings
+
     PYDANTIC_V2 = True
 except ImportError:
     # Fallback for older versions
     try:
+        from pydantic import Field, ValidationError, validator
         from pydantic_settings import BaseSettings
-        from pydantic import Field, validator, ValidationError
+
         PYDANTIC_V2 = True
     except ImportError:
         # Fallback for very old versions
-        from pydantic import BaseModel as BaseSettings, Field
+        from pydantic import BaseModel as BaseSettings
+        from pydantic import Field
+
         validator = None
         ValidationError = Exception
         PYDANTIC_V2 = False
@@ -41,6 +46,7 @@ except ImportError:
 
 class DatabaseSettings(BaseSettings):
     """Database configuration settings."""
+
     url: str = Field(default="sqlite:///./decoyable.db", env="DATABASE_URL")
     pool_size: int = Field(default=10, env="DATABASE_POOL_SIZE")
     max_overflow: int = Field(default=20, env="DATABASE_MAX_OVERFLOW")
@@ -50,6 +56,7 @@ class DatabaseSettings(BaseSettings):
 
 class RedisSettings(BaseSettings):
     """Redis configuration settings."""
+
     url: str = Field(default="redis://localhost:6379/0", env="REDIS_URL")
     password: Optional[str] = Field(default=None, env="REDIS_PASSWORD")
     db: int = Field(default=0, env="REDIS_DB")
@@ -59,6 +66,7 @@ class RedisSettings(BaseSettings):
 
 class KafkaSettings(BaseSettings):
     """Kafka streaming configuration settings."""
+
     enabled: bool = Field(default=False, env="KAFKA_ENABLED")
     bootstrap_servers: str = Field(default="localhost:9092", env="KAFKA_BOOTSTRAP_SERVERS")
     attack_topic: str = Field(default="decoyable.attacks", env="KAFKA_ATTACK_TOPIC")
@@ -74,6 +82,7 @@ class KafkaSettings(BaseSettings):
 
 class APISettings(BaseSettings):
     """API server configuration settings."""
+
     host: str = Field(default="0.0.0.0", env="API_HOST")
     port: int = Field(default=8000, env="APP_PORT")
     debug: bool = Field(default=False, env="API_DEBUG")
@@ -83,6 +92,7 @@ class APISettings(BaseSettings):
 
 class SecuritySettings(BaseSettings):
     """Security configuration settings."""
+
     secret_key: str = Field(default="dev-secret-key-change-in-production", env="SECRET_KEY")
     jwt_secret_key: str = Field(default="jwt-secret-key", env="JWT_SECRET_KEY")
     jwt_algorithm: str = Field(default="HS256", env="JWT_ALGORITHM")
@@ -91,6 +101,7 @@ class SecuritySettings(BaseSettings):
 
 class LLMSettings(BaseSettings):
     """LLM provider configuration settings."""
+
     openai_api_key: Optional[str] = Field(default=None, env="OPENAI_API_KEY")
     anthropic_api_key: Optional[str] = Field(default=None, env="ANTHROPIC_API_KEY")
     google_api_key: Optional[str] = Field(default=None, env="GOOGLE_API_KEY")
@@ -101,6 +112,7 @@ class LLMSettings(BaseSettings):
 
 class HoneypotSettings(BaseSettings):
     """Honeypot configuration settings."""
+
     enabled: bool = Field(default=True, env="HONEYPOT_ENABLED")
     ports: str = Field(default="9001,2222", env="DECOY_PORTS")
     security_team_endpoint: str = Field(default="", env="SECURITY_TEAM_ENDPOINT")
@@ -116,6 +128,7 @@ class HoneypotSettings(BaseSettings):
 
 class CelerySettings(BaseSettings):
     """Celery task queue configuration settings."""
+
     broker_url: str = Field(default="redis://localhost:6379/0", env="CELERY_BROKER_URL")
     result_backend: str = Field(default="redis://localhost:6379/0", env="CELERY_RESULT_BACKEND")
     task_serializer: str = Field(default="json", env="CELERY_TASK_SERIALIZER")
@@ -127,6 +140,7 @@ class CelerySettings(BaseSettings):
 
 class LoggingSettings(BaseSettings):
     """Structured logging configuration settings."""
+
     level: str = Field(default="INFO", env="LOG_LEVEL")
     console_enabled: bool = Field(default=True, env="LOG_CONSOLE_ENABLED")
     console_level: str = Field(default="INFO", env="LOG_CONSOLE_LEVEL")
@@ -145,6 +159,7 @@ class LoggingSettings(BaseSettings):
 
 class VSExtensionSettings(BaseSettings):
     """VS Code extension configuration settings."""
+
     enabled: bool = Field(default=True, env="VSCODE_EXTENSION_ENABLED")
     server_host: str = Field(default="localhost", env="VSCODE_SERVER_HOST")
     server_port: int = Field(default=3001, env="VSCODE_SERVER_PORT")
@@ -152,6 +167,7 @@ class VSExtensionSettings(BaseSettings):
 
 class KnowledgeSettings(BaseSettings):
     """Knowledge database configuration settings."""
+
     db_path: str = Field(default="decoyable_knowledge.db", env="KNOWLEDGE_DB_PATH")
     max_connections: int = Field(default=5, env="KNOWLEDGE_MAX_CONNECTIONS")
     cache_size: int = Field(default=1000, env="KNOWLEDGE_CACHE_SIZE")
@@ -159,12 +175,15 @@ class KnowledgeSettings(BaseSettings):
 
 class ScannersSettings(BaseSettings):
     """Security scanners configuration settings."""
+
     secrets_enabled: bool = Field(default=True, env="SCANNERS_SECRETS_ENABLED")
     deps_enabled: bool = Field(default=True, env="SCANNERS_DEPS_ENABLED")
     sast_enabled: bool = Field(default=True, env="SCANNERS_SAST_ENABLED")
     timeout_seconds: int = Field(default=300, env="SCANNERS_TIMEOUT_SECONDS")
     max_file_size_mb: int = Field(default=10, env="SCANNERS_MAX_FILE_SIZE_MB")
-    exclude_patterns: List[str] = Field(default=[".git", "__pycache__", "node_modules", ".venv", "venv"], env="SCANNERS_EXCLUDE_PATTERNS")
+    exclude_patterns: List[str] = Field(
+        default=[".git", "__pycache__", "node_modules", ".venv", "venv"], env="SCANNERS_EXCLUDE_PATTERNS"
+    )
     min_confidence: float = Field(default=0.8, env="SCANNERS_MIN_CONFIDENCE")
     check_missing_imports: bool = Field(default=True, env="SCANNERS_CHECK_MISSING_IMPORTS")
     check_unused_dependencies: bool = Field(default=False, env="SCANNERS_CHECK_UNUSED_DEPS")
@@ -186,13 +205,13 @@ class Settings:
             pool_size=int(os.getenv("DATABASE_POOL_SIZE", "10")),
             max_overflow=int(os.getenv("DATABASE_MAX_OVERFLOW", "20")),
             pool_timeout=int(os.getenv("DATABASE_POOL_TIMEOUT", "30")),
-            echo=os.getenv("DATABASE_ECHO", "false").lower() == "true"
+            echo=os.getenv("DATABASE_ECHO", "false").lower() == "true",
         )
 
         self.redis = RedisSettings(
             url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
             password=os.getenv("REDIS_PASSWORD"),
-            db=int(os.getenv("REDIS_DB", "0"))
+            db=int(os.getenv("REDIS_DB", "0")),
         )
 
         self.kafka = KafkaSettings(
@@ -201,7 +220,7 @@ class Settings:
             attack_topic=os.getenv("KAFKA_ATTACK_TOPIC", "decoyable.attacks"),
             consumer_group=os.getenv("KAFKA_CONSUMER_GROUP", "decoyable-consumers"),
             auto_offset_reset=os.getenv("KAFKA_AUTO_OFFSET_RESET", "latest"),
-            enable_auto_commit=os.getenv("KAFKA_ENABLE_AUTO_COMMIT", "true").lower() == "true"
+            enable_auto_commit=os.getenv("KAFKA_ENABLE_AUTO_COMMIT", "true").lower() == "true",
         )
 
         self.api = APISettings(
@@ -209,14 +228,14 @@ class Settings:
             port=int(os.getenv("APP_PORT", "8000")),
             debug=os.getenv("API_DEBUG", "false").lower() == "true",
             workers=int(os.getenv("API_WORKERS", "1")),
-            reload=os.getenv("API_RELOAD", "false").lower() == "true"
+            reload=os.getenv("API_RELOAD", "false").lower() == "true",
         )
 
         self.security = SecuritySettings(
             secret_key=os.getenv("SECRET_KEY", "dev-secret-key-change-in-production"),
             jwt_secret_key=os.getenv("JWT_SECRET_KEY", "jwt-secret-key"),
             jwt_algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
-            jwt_expiration_hours=int(os.getenv("JWT_EXPIRATION_HOURS", "24"))
+            jwt_expiration_hours=int(os.getenv("JWT_EXPIRATION_HOURS", "24")),
         )
 
         self.llm = LLMSettings(
@@ -225,7 +244,7 @@ class Settings:
             google_api_key=os.getenv("GOOGLE_API_KEY"),
             default_provider=os.getenv("DEFAULT_LLM_PROVIDER", "openai"),
             request_timeout=int(os.getenv("LLM_REQUEST_TIMEOUT", "30")),
-            max_retries=int(os.getenv("LLM_MAX_RETRIES", "3"))
+            max_retries=int(os.getenv("LLM_MAX_RETRIES", "3")),
         )
 
         self.honeypot = HoneypotSettings(
@@ -234,7 +253,7 @@ class Settings:
             security_team_endpoint=os.getenv("SECURITY_TEAM_ENDPOINT", ""),
             log_attacks=os.getenv("HONEYPOT_LOG_ATTACKS", "true").lower() == "true",
             block_ips=os.getenv("HONEYPOT_BLOCK_IPS", "true").lower() == "true",
-            block_duration_minutes=int(os.getenv("HONEYPOT_BLOCK_DURATION_MINUTES", "60"))
+            block_duration_minutes=int(os.getenv("HONEYPOT_BLOCK_DURATION_MINUTES", "60")),
         )
 
         self.celery = CelerySettings(
@@ -244,7 +263,7 @@ class Settings:
             result_serializer=os.getenv("CELERY_RESULT_SERIALIZER", "json"),
             accept_content=["json"],  # Simplified for now
             timezone=os.getenv("CELERY_TIMEZONE", "UTC"),
-            enable_utc=os.getenv("CELERY_ENABLE_UTC", "true").lower() == "true"
+            enable_utc=os.getenv("CELERY_ENABLE_UTC", "true").lower() == "true",
         )
 
         self.logging = LoggingSettings(
@@ -261,19 +280,19 @@ class Settings:
             performance_max_size_mb=int(os.getenv("LOG_PERFORMANCE_MAX_SIZE_MB", "50")),
             performance_backup_count=int(os.getenv("LOG_PERFORMANCE_BACKUP_COUNT", "3")),
             json_format=os.getenv("LOG_JSON_FORMAT", "true").lower() == "true",
-            include_correlation_id=os.getenv("LOG_INCLUDE_CORRELATION_ID", "true").lower() == "true"
+            include_correlation_id=os.getenv("LOG_INCLUDE_CORRELATION_ID", "true").lower() == "true",
         )
 
         self.vscode_extension = VSExtensionSettings(
             enabled=os.getenv("VSCODE_EXTENSION_ENABLED", "true").lower() == "true",
             server_host=os.getenv("VSCODE_SERVER_HOST", "localhost"),
-            server_port=int(os.getenv("VSCODE_SERVER_PORT", "3001"))
+            server_port=int(os.getenv("VSCODE_SERVER_PORT", "3001")),
         )
 
         self.knowledge = KnowledgeSettings(
             db_path=os.getenv("KNOWLEDGE_DB_PATH", "decoyable_knowledge.db"),
             max_connections=int(os.getenv("KNOWLEDGE_MAX_CONNECTIONS", "5")),
-            cache_size=int(os.getenv("KNOWLEDGE_CACHE_SIZE", "1000"))
+            cache_size=int(os.getenv("KNOWLEDGE_CACHE_SIZE", "1000")),
         )
 
         self.scanners = ScannersSettings(
@@ -282,11 +301,13 @@ class Settings:
             sast_enabled=os.getenv("SCANNERS_SAST_ENABLED", "true").lower() == "true",
             timeout_seconds=int(os.getenv("SCANNERS_TIMEOUT_SECONDS", "300")),
             max_file_size_mb=int(os.getenv("SCANNERS_MAX_FILE_SIZE_MB", "10")),
-            exclude_patterns=os.getenv("SCANNERS_EXCLUDE_PATTERNS", ".git,__pycache__,node_modules,.venv,venv").split(","),
+            exclude_patterns=os.getenv("SCANNERS_EXCLUDE_PATTERNS", ".git,__pycache__,node_modules,.venv,venv").split(
+                ","
+            ),
             min_confidence=float(os.getenv("SCANNERS_MIN_CONFIDENCE", "0.8")),
             check_missing_imports=os.getenv("SCANNERS_CHECK_MISSING_IMPORTS", "true").lower() == "true",
             check_unused_dependencies=os.getenv("SCANNERS_CHECK_UNUSED_DEPS", "false").lower() == "true",
-            severity_threshold=os.getenv("SCANNERS_SEVERITY_THRESHOLD", "LOW")
+            severity_threshold=os.getenv("SCANNERS_SEVERITY_THRESHOLD", "LOW"),
         )
 
     # Legacy compatibility properties (deprecated - use nested settings)

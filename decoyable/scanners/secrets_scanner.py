@@ -9,12 +9,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Pattern, Tuple, Union
 
 from decoyable.core.logging import get_logger
-from decoyable.scanners.interfaces import BaseScanner, ScanReport, ScanResult, ScannerType, ScannerConfig
+from decoyable.scanners.interfaces import BaseScanner, ScannerConfig, ScannerType, ScanReport, ScanResult
 
 
 @dataclass(frozen=True)
 class SecretFinding:
     """Represents a potential secret found in code."""
+
     filename: Optional[str]
     lineno: int
     secret_type: str
@@ -34,6 +35,7 @@ class SecretFinding:
 @dataclass
 class SecretsScannerConfig:
     """Configuration for the secrets scanner."""
+
     enabled: bool = True
     timeout_seconds: int = 300
     max_file_size_mb: int = 10
@@ -113,7 +115,7 @@ class SecretsScanner(BaseScanner):
             return await self._create_report(
                 filtered_findings,
                 scan_time,
-                metadata={"total_findings": len(findings), "filtered_findings": len(filtered_findings)}
+                metadata={"total_findings": len(findings), "filtered_findings": len(filtered_findings)},
             )
 
         except Exception as e:
@@ -138,7 +140,7 @@ class SecretsScanner(BaseScanner):
             return []
 
         try:
-            content = file_path.read_text(encoding='utf-8', errors='ignore')
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
             return await self.scan_content(content, str(file_path))
         except (OSError, UnicodeDecodeError) as e:
             self.logger.warning(f"Could not read file {file_path}: {e}")
@@ -157,7 +159,9 @@ class SecretsScanner(BaseScanner):
         files_to_scan = []
         for root, dirs, files in os.walk(dir_path):
             # Skip excluded directories
-            dirs[:] = [d for d in dirs if not any(excl in os.path.join(root, d) for excl in self.config.exclude_patterns)]
+            dirs[:] = [
+                d for d in dirs if not any(excl in os.path.join(root, d) for excl in self.config.exclude_patterns)
+            ]
 
             for file in files:
                 file_path = Path(root) / file
@@ -196,14 +200,16 @@ class SecretsScanner(BaseScanner):
                     end = min(len(line), match_start + len(match) + 50)
                     context = "..." + line[start:end] + "..."
 
-                findings.append(SecretFinding(
-                    filename=filename,
-                    lineno=line_no,
-                    secret_type=secret_type,
-                    match=match,
-                    context=context,
-                    confidence=confidence
-                ))
+                findings.append(
+                    SecretFinding(
+                        filename=filename,
+                        lineno=line_no,
+                        secret_type=secret_type,
+                        match=match,
+                        context=context,
+                        confidence=confidence,
+                    )
+                )
 
         return findings
 
@@ -231,8 +237,8 @@ class SecretsScanner(BaseScanner):
 
     def _calculate_entropy(self, s: str) -> float:
         """Calculate Shannon entropy of a string."""
-        from collections import Counter
         import math
+        from collections import Counter
 
         if not s:
             return 0.0
@@ -250,14 +256,59 @@ class SecretsScanner(BaseScanner):
     def _is_text_file(self, file_path: Path) -> bool:
         """Check if a file is likely a text file."""
         text_extensions = {
-            '.py', '.js', '.ts', '.java', '.c', '.cpp', '.h', '.hpp', '.cs', '.php', '.rb', '.go',
-            '.rs', '.swift', '.kt', '.scala', '.clj', '.hs', '.ml', '.fs', '.vb', '.pl', '.tcl',
-            '.lua', '.r', '.sh', '.bash', '.zsh', '.fish', '.ps1', '.sql', '.xml', '.json', '.yaml',
-            '.yml', '.toml', '.ini', '.cfg', '.conf', '.env', '.md', '.txt', '.rst', '.adoc'
+            ".py",
+            ".js",
+            ".ts",
+            ".java",
+            ".c",
+            ".cpp",
+            ".h",
+            ".hpp",
+            ".cs",
+            ".php",
+            ".rb",
+            ".go",
+            ".rs",
+            ".swift",
+            ".kt",
+            ".scala",
+            ".clj",
+            ".hs",
+            ".ml",
+            ".fs",
+            ".vb",
+            ".pl",
+            ".tcl",
+            ".lua",
+            ".r",
+            ".sh",
+            ".bash",
+            ".zsh",
+            ".fish",
+            ".ps1",
+            ".sql",
+            ".xml",
+            ".json",
+            ".yaml",
+            ".yml",
+            ".toml",
+            ".ini",
+            ".cfg",
+            ".conf",
+            ".env",
+            ".md",
+            ".txt",
+            ".rst",
+            ".adoc",
         }
 
         return file_path.suffix.lower() in text_extensions or file_path.name in {
-            'Dockerfile', 'Makefile', 'CMakeLists.txt', 'requirements.txt', 'setup.py', 'pyproject.toml'
+            "Dockerfile",
+            "Makefile",
+            "CMakeLists.txt",
+            "requirements.txt",
+            "setup.py",
+            "pyproject.toml",
         }
 
 

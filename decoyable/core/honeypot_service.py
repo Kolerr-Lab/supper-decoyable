@@ -19,14 +19,16 @@ logger = logging.getLogger(__name__)
 # Optional imports for graceful degradation
 try:
     import httpx
+
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False
 
 try:
-    from decoyable.defense.analysis import analyze_attack_async
     from decoyable.defense.adaptive_defense import AdaptiveDefense
+    from decoyable.defense.analysis import analyze_attack_async
     from decoyable.defense.knowledge_base import KnowledgeBase
+
     DEFENSE_AVAILABLE = True
 except ImportError:
     DEFENSE_AVAILABLE = False
@@ -77,15 +79,19 @@ class HoneypotService:
 
         try:
             # Get service dependencies
-            self.config = self.registry.get_by_name('config')
-            self.streaming_service = self.registry.get_by_name('streaming_service')
-            self.database_service = self.registry.get_by_name('database_service')
-            self.cache_service = self.registry.get_by_name('cache_service')
+            self.config = self.registry.get_by_name("config")
+            self.streaming_service = self.registry.get_by_name("streaming_service")
+            self.database_service = self.registry.get_by_name("database_service")
+            self.cache_service = self.registry.get_by_name("cache_service")
 
             # Initialize defense components if available
             if DEFENSE_AVAILABLE:
                 # Initialize knowledge base
-                kb_path = getattr(self.config, 'knowledge_db_path', 'decoyable_knowledge.db') if self.config else 'decoyable_knowledge.db'
+                kb_path = (
+                    getattr(self.config, "knowledge_db_path", "decoyable_knowledge.db")
+                    if self.config
+                    else "decoyable_knowledge.db"
+                )
                 self.knowledge_base = KnowledgeBase(kb_path)
 
                 # Initialize adaptive defense
@@ -96,8 +102,8 @@ class HoneypotService:
                 logger.warning("Defense components not available. Honeypot functionality limited.")
 
             # Load initial decoy endpoints from config
-            if self.config and hasattr(self.config, 'honeypot'):
-                initial_endpoints = getattr(self.config.honeypot, 'decoy_endpoints', [])
+            if self.config and hasattr(self.config, "honeypot"):
+                initial_endpoints = getattr(self.config.honeypot, "decoy_endpoints", [])
                 self.decoy_endpoints.update(initial_endpoints)
 
             self._initialized = True
@@ -108,9 +114,7 @@ class HoneypotService:
             self._initialized = True
 
     async def process_attack(
-        self,
-        attack_data: Dict[str, Any],
-        background_tasks: Optional[Any] = None
+        self, attack_data: Dict[str, Any], background_tasks: Optional[Any] = None
     ) -> Dict[str, Any]:
         """
         Process a captured attack.
@@ -127,18 +131,13 @@ class HoneypotService:
         self.attack_count += 1
         self.last_attack_time = datetime.utcnow()
 
-        ip_address = attack_data.get('ip_address', 'unknown')
-        method = attack_data.get('method', 'UNKNOWN')
-        path = attack_data.get('path', '/')
+        ip_address = attack_data.get("ip_address", "unknown")
+        method = attack_data.get("method", "UNKNOWN")
+        path = attack_data.get("path", "/")
 
         logger.warning(f"Honeypot attack detected: {method} {path} from {ip_address}")
 
-        result = {
-            "processed": True,
-            "attack_id": None,
-            "actions_taken": [],
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        result = {"processed": True, "attack_id": None, "actions_taken": [], "timestamp": datetime.utcnow().isoformat()}
 
         try:
             # Analyze attack if analysis is available
@@ -158,12 +157,14 @@ class HoneypotService:
             # Store in database if available
             if self.database_service:
                 try:
-                    await self.database_service.store_attack_event({
-                        "event_type": "honeypot_attack",
-                        "data": attack_data,
-                        "analysis": analysis_result,
-                        "timestamp": result["timestamp"]
-                    })
+                    await self.database_service.store_attack_event(
+                        {
+                            "event_type": "honeypot_attack",
+                            "data": attack_data,
+                            "analysis": analysis_result,
+                            "timestamp": result["timestamp"],
+                        }
+                    )
                 except Exception as e:
                     logger.error(f"Failed to store attack in database: {e}")
 
@@ -171,12 +172,7 @@ class HoneypotService:
             if self.streaming_service:
                 try:
                     success = await self.streaming_service.publish_attack_event(
-                        "honeypot_attack",
-                        {
-                            **attack_data,
-                            "analysis": analysis_result
-                        },
-                        key=ip_address
+                        "honeypot_attack", {**attack_data, "analysis": analysis_result}, key=ip_address
                     )
                     if success:
                         result["actions_taken"].append("streamed")
@@ -196,43 +192,37 @@ class HoneypotService:
         return result
 
     async def _apply_adaptive_defense(
-        self,
-        attack_data: Dict[str, Any],
-        analysis_result: Dict[str, Any],
-        result: Dict[str, Any]
+        self, attack_data: Dict[str, Any], analysis_result: Dict[str, Any], result: Dict[str, Any]
     ) -> None:
         """Apply adaptive defense measures."""
         if not self.adaptive_defense:
             return
 
-        ip_address = attack_data.get('ip_address', 'unknown')
-        recommended_action = analysis_result.get('recommended_action')
+        ip_address = attack_data.get("ip_address", "unknown")
+        recommended_action = analysis_result.get("recommended_action")
 
         # Apply recommended action
-        if recommended_action in ('block', 'block_ip'):
+        if recommended_action in ("block", "block_ip"):
             await self.block_ip(ip_address)
             result["actions_taken"].append("ip_blocked")
 
         # Update adaptive patterns
-        attack_type = analysis_result.get('attack_type')
+        attack_type = analysis_result.get("attack_type")
         if attack_type:
             # Add new patterns based on this attack
-            path = attack_data.get('path', '')
+            path = attack_data.get("path", "")
             if path and len(path) > 5:  # Avoid adding very short paths
                 self.adaptive_defense.add_pattern(attack_type, path)
                 result["actions_taken"].append("pattern_added")
 
     async def _forward_alerts(
-        self,
-        attack_data: Dict[str, Any],
-        analysis_result: Dict[str, Any],
-        result: Dict[str, Any]
+        self, attack_data: Dict[str, Any], analysis_result: Dict[str, Any], result: Dict[str, Any]
     ) -> None:
         """Forward alerts to configured endpoints."""
-        if not self.config or not hasattr(self.config, 'honeypot'):
+        if not self.config or not hasattr(self.config, "honeypot"):
             return
 
-        security_endpoint = getattr(self.config.honeypot, 'security_team_endpoint', None)
+        security_endpoint = getattr(self.config.honeypot, "security_team_endpoint", None)
         if not security_endpoint or not HTTPX_AVAILABLE:
             return
 
@@ -240,15 +230,13 @@ class HoneypotService:
             "attack": attack_data,
             "analysis": analysis_result,
             "timestamp": datetime.utcnow().isoformat(),
-            "honeypot_service": "decoyable"
+            "honeypot_service": "decoyable",
         }
 
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 resp = await client.post(
-                    security_endpoint,
-                    json=alert_data,
-                    headers={"Content-Type": "application/json"}
+                    security_endpoint, json=alert_data, headers={"Content-Type": "application/json"}
                 )
                 if resp.status_code >= 200 and resp.status_code < 300:
                     logger.info("Alert forwarded to security endpoint")
@@ -282,9 +270,12 @@ class HoneypotService:
             # Use iptables on Linux systems
             proc = await asyncio.create_subprocess_exec(
                 "iptables",
-                "-A", "INPUT",
-                "-s", ip,
-                "-j", "DROP",
+                "-A",
+                "INPUT",
+                "-s",
+                ip,
+                "-j",
+                "DROP",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )

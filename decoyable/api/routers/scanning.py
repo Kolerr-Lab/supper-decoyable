@@ -4,15 +4,14 @@ Scanning router for security scanning operations.
 
 import time
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from decoyable.core.logging import get_logger, LoggingService
+from decoyable.core.logging import LoggingService, get_logger
 from decoyable.core.registry import ServiceRegistry
 from decoyable.scanners.service import ScannerService
-
 
 router = APIRouter()
 logger = get_logger("api.scanning")
@@ -20,22 +19,20 @@ logger = get_logger("api.scanning")
 
 class ScanRequest(BaseModel):
     """Request model for scan endpoints."""
+
     path: str = Field(..., min_length=1, max_length=4096, description="Path to scan")
     scan_types: Optional[list[str]] = Field(None, description="Types of scans to perform")
     async_scan: bool = Field(False, description="Whether to perform scan asynchronously")
 
     class Config:
         schema_extra = {
-            "example": {
-                "path": "/path/to/scan",
-                "scan_types": ["secrets", "dependencies", "sast"],
-                "async_scan": False
-            }
+            "example": {"path": "/path/to/scan", "scan_types": ["secrets", "dependencies", "sast"], "async_scan": False}
         }
 
 
 class ScanResponse(BaseModel):
     """Response model for scan operations."""
+
     status: str
     scan_id: Optional[str] = None
     results: Optional[Dict[str, Any]] = None
@@ -46,8 +43,8 @@ class ScanResponse(BaseModel):
 def get_scanner_service(registry: ServiceRegistry = Depends(lambda: ServiceRegistry())) -> ScannerService:
     """Dependency injection for scanner service."""
     try:
-        config = registry.get_by_name('config')
-        logging_service = registry.get_by_name('logging')
+        config = registry.get_by_name("config")
+        logging_service = registry.get_by_name("logging")
         return ScannerService(config, logging_service)
     except Exception as e:
         logger.error(f"Failed to get scanner service: {e}")
@@ -58,7 +55,7 @@ def get_scanner_service(registry: ServiceRegistry = Depends(lambda: ServiceRegis
 async def scan_secrets(
     request: ScanRequest,
     background_tasks: BackgroundTasks,
-    scanner_service: ScannerService = Depends(get_scanner_service)
+    scanner_service: ScannerService = Depends(get_scanner_service),
 ) -> ScanResponse:
     """
     Scan a directory for exposed secrets and sensitive information.
@@ -77,9 +74,7 @@ async def scan_secrets(
             # Async processing
             background_tasks.add_task(_perform_secrets_scan_async, request.path, scanner_service)
             return ScanResponse(
-                status="accepted",
-                message="Scan started asynchronously",
-                scan_id=f"secrets_{int(time.time())}"
+                status="accepted", message="Scan started asynchronously", scan_id=f"secrets_{int(time.time())}"
             )
 
         # Synchronous processing
@@ -91,9 +86,9 @@ async def scan_secrets(
             results={
                 "findings": [finding.__dict__ for finding in report.results],
                 "count": len(report.results),
-                "summary": report.summary.__dict__
+                "summary": report.summary.__dict__,
             },
-            scan_duration=scan_duration
+            scan_duration=scan_duration,
         )
 
     except Exception as e:
@@ -106,7 +101,7 @@ async def scan_secrets(
 async def scan_dependencies(
     request: ScanRequest,
     background_tasks: BackgroundTasks,
-    scanner_service: ScannerService = Depends(get_scanner_service)
+    scanner_service: ScannerService = Depends(get_scanner_service),
 ) -> ScanResponse:
     """Scan a project for dependency issues and missing imports."""
     start_time = time.time()
@@ -115,9 +110,7 @@ async def scan_dependencies(
         if request.async_scan:
             background_tasks.add_task(_perform_deps_scan_async, request.path, scanner_service)
             return ScanResponse(
-                status="accepted",
-                message="Dependency scan started asynchronously",
-                scan_id=f"deps_{int(time.time())}"
+                status="accepted", message="Dependency scan started asynchronously", scan_id=f"deps_{int(time.time())}"
             )
 
         report = await scanner_service.scan_dependencies(request.path)
@@ -128,9 +121,9 @@ async def scan_dependencies(
             results={
                 "issues": [issue.__dict__ for issue in report.results],
                 "count": len(report.results),
-                "summary": report.summary.__dict__
+                "summary": report.summary.__dict__,
             },
-            scan_duration=scan_duration
+            scan_duration=scan_duration,
         )
 
     except Exception as e:
@@ -142,7 +135,7 @@ async def scan_dependencies(
 async def scan_sast(
     request: ScanRequest,
     background_tasks: BackgroundTasks,
-    scanner_service: ScannerService = Depends(get_scanner_service)
+    scanner_service: ScannerService = Depends(get_scanner_service),
 ) -> ScanResponse:
     """Perform Static Application Security Testing (SAST)."""
     start_time = time.time()
@@ -151,9 +144,7 @@ async def scan_sast(
         if request.async_scan:
             background_tasks.add_task(_perform_sast_scan_async, request.path, scanner_service)
             return ScanResponse(
-                status="accepted",
-                message="SAST scan started asynchronously",
-                scan_id=f"sast_{int(time.time())}"
+                status="accepted", message="SAST scan started asynchronously", scan_id=f"sast_{int(time.time())}"
             )
 
         report = await scanner_service.scan_sast(request.path)
@@ -164,9 +155,9 @@ async def scan_sast(
             results={
                 "vulnerabilities": [vuln.__dict__ for vuln in report.results],
                 "count": len(report.results),
-                "summary": report.summary.__dict__
+                "summary": report.summary.__dict__,
             },
-            scan_duration=scan_duration
+            scan_duration=scan_duration,
         )
 
     except Exception as e:
@@ -178,7 +169,7 @@ async def scan_sast(
 async def scan_all(
     request: ScanRequest,
     background_tasks: BackgroundTasks,
-    scanner_service: ScannerService = Depends(get_scanner_service)
+    scanner_service: ScannerService = Depends(get_scanner_service),
 ) -> ScanResponse:
     """Perform comprehensive security scanning (secrets, dependencies, SAST)."""
     start_time = time.time()
@@ -189,7 +180,7 @@ async def scan_all(
             return ScanResponse(
                 status="accepted",
                 message="Comprehensive scan started asynchronously",
-                scan_id=f"comprehensive_{int(time.time())}"
+                scan_id=f"comprehensive_{int(time.time())}",
             )
 
         # Run all scans concurrently
@@ -210,7 +201,7 @@ async def scan_all(
             results[scan_type] = {
                 "findings": [finding.__dict__ for finding in report.results],
                 "count": len(report.results),
-                "summary": report.summary.__dict__
+                "summary": report.summary.__dict__,
             }
 
         scan_duration = time.time() - start_time
@@ -220,7 +211,7 @@ async def scan_all(
             status="success",
             results=results,
             message=f"Comprehensive scan completed: {total_issues} total issues found",
-            scan_duration=scan_duration
+            scan_duration=scan_duration,
         )
 
     except Exception as e:

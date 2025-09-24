@@ -2,8 +2,8 @@
 SAST (Static Application Security Testing) scanner implementation with dependency injection support.
 """
 
-import asyncio
 import ast
+import asyncio
 import os
 import re
 from dataclasses import dataclass
@@ -12,11 +12,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Pattern, Set, Union
 
 from decoyable.core.logging import get_logger
-from decoyable.scanners.interfaces import BaseScanner, ScanReport, ScanResult, ScannerType, ScannerConfig
+from decoyable.scanners.interfaces import BaseScanner, ScannerConfig, ScannerType, ScanReport, ScanResult
 
 
 class VulnerabilitySeverity(Enum):
     """Severity levels for vulnerabilities."""
+
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
@@ -26,6 +27,7 @@ class VulnerabilitySeverity(Enum):
 
 class VulnerabilityType(Enum):
     """Types of vulnerabilities that can be detected."""
+
     SQL_INJECTION = "SQL_INJECTION"
     XSS = "XSS"
     COMMAND_INJECTION = "COMMAND_INJECTION"
@@ -44,6 +46,7 @@ class VulnerabilityType(Enum):
 @dataclass
 class Vulnerability:
     """Represents a security vulnerability found in code."""
+
     file_path: str
     line_number: int
     vulnerability_type: VulnerabilityType
@@ -59,6 +62,7 @@ class Vulnerability:
 @dataclass
 class SASTScannerConfig:
     """Configuration for the SAST scanner."""
+
     enabled: bool = True
     timeout_seconds: int = 300
     max_file_size_mb: int = 5
@@ -85,111 +89,121 @@ class SASTScanner(BaseScanner):
         rules = [
             # SQL Injection patterns
             {
-                'type': VulnerabilityType.SQL_INJECTION,
-                'severity': VulnerabilitySeverity.HIGH,
-                'pattern': re.compile(r'(?:execute|executemany|raw)\s*\(\s*["\'](.*?(?:SELECT|INSERT|UPDATE|DELETE).*?)["\']', re.IGNORECASE | re.DOTALL),
-                'description': 'Potential SQL injection vulnerability',
-                'recommendation': 'Use parameterized queries or ORM instead of string formatting',
-                'cwe_id': 'CWE-89'
+                "type": VulnerabilityType.SQL_INJECTION,
+                "severity": VulnerabilitySeverity.HIGH,
+                "pattern": re.compile(
+                    r'(?:execute|executemany|raw)\s*\(\s*["\'](.*?(?:SELECT|INSERT|UPDATE|DELETE).*?)["\']',
+                    re.IGNORECASE | re.DOTALL,
+                ),
+                "description": "Potential SQL injection vulnerability",
+                "recommendation": "Use parameterized queries or ORM instead of string formatting",
+                "cwe_id": "CWE-89",
             },
             # XSS patterns
             {
-                'type': VulnerabilityType.XSS,
-                'severity': VulnerabilitySeverity.HIGH,
-                'pattern': re.compile(r'innerHTML\s*\+?\s*=', re.IGNORECASE),
-                'description': 'Potential XSS vulnerability with innerHTML assignment',
-                'recommendation': 'Use textContent or sanitize HTML input',
-                'cwe_id': 'CWE-79'
+                "type": VulnerabilityType.XSS,
+                "severity": VulnerabilitySeverity.HIGH,
+                "pattern": re.compile(r"innerHTML\s*\+?\s*=", re.IGNORECASE),
+                "description": "Potential XSS vulnerability with innerHTML assignment",
+                "recommendation": "Use textContent or sanitize HTML input",
+                "cwe_id": "CWE-79",
             },
             # Command injection
             {
-                'type': VulnerabilityType.COMMAND_INJECTION,
-                'severity': VulnerabilitySeverity.CRITICAL,
-                'pattern': re.compile(r'(?:subprocess\.|os\.system|os\.popen|commands\.)\w*\(\s*["\'](.*?(?:\$|%s|\{.*?\}).*?)["\']', re.DOTALL),
-                'description': 'Potential command injection vulnerability',
-                'recommendation': 'Use subprocess with shell=False and proper argument lists',
-                'cwe_id': 'CWE-78'
+                "type": VulnerabilityType.COMMAND_INJECTION,
+                "severity": VulnerabilitySeverity.CRITICAL,
+                "pattern": re.compile(
+                    r'(?:subprocess\.|os\.system|os\.popen|commands\.)\w*\(\s*["\'](.*?(?:\$|%s|\{.*?\}).*?)["\']',
+                    re.DOTALL,
+                ),
+                "description": "Potential command injection vulnerability",
+                "recommendation": "Use subprocess with shell=False and proper argument lists",
+                "cwe_id": "CWE-78",
             },
             # Path traversal
             {
-                'type': VulnerabilityType.PATH_TRAVERSAL,
-                'severity': VulnerabilitySeverity.HIGH,
-                'pattern': re.compile(r'open\s*\(\s*["\'](.*?(?:\.\./|\.\.\\).*?)["\']', re.IGNORECASE),
-                'description': 'Potential path traversal vulnerability',
-                'recommendation': 'Validate and sanitize file paths',
-                'cwe_id': 'CWE-22'
+                "type": VulnerabilityType.PATH_TRAVERSAL,
+                "severity": VulnerabilitySeverity.HIGH,
+                "pattern": re.compile(r'open\s*\(\s*["\'](.*?(?:\.\./|\.\.\\).*?)["\']', re.IGNORECASE),
+                "description": "Potential path traversal vulnerability",
+                "recommendation": "Validate and sanitize file paths",
+                "cwe_id": "CWE-22",
             },
             # Insecure random
             {
-                'type': VulnerabilityType.INSECURE_RANDOM,
-                'severity': VulnerabilitySeverity.MEDIUM,
-                'pattern': re.compile(r'import\s+random\n.*random\.(?:randint|choice|sample)', re.MULTILINE | re.DOTALL),
-                'description': 'Using insecure random number generation',
-                'recommendation': 'Use secrets module for cryptographic purposes',
-                'cwe_id': 'CWE-338'
+                "type": VulnerabilityType.INSECURE_RANDOM,
+                "severity": VulnerabilitySeverity.MEDIUM,
+                "pattern": re.compile(
+                    r"import\s+random\n.*random\.(?:randint|choice|sample)", re.MULTILINE | re.DOTALL
+                ),
+                "description": "Using insecure random number generation",
+                "recommendation": "Use secrets module for cryptographic purposes",
+                "cwe_id": "CWE-338",
             },
             # Hardcoded secrets
             {
-                'type': VulnerabilityType.HARDCODED_SECRET,
-                'severity': VulnerabilitySeverity.MEDIUM,
-                'pattern': re.compile(r'(?:password|secret|key|token)\s*=\s*["\'][^"\']{10,}["\']', re.IGNORECASE),
-                'description': 'Potential hardcoded secret or credential',
-                'recommendation': 'Use environment variables or secure credential storage',
-                'cwe_id': 'CWE-798'
+                "type": VulnerabilityType.HARDCODED_SECRET,
+                "severity": VulnerabilitySeverity.MEDIUM,
+                "pattern": re.compile(r'(?:password|secret|key|token)\s*=\s*["\'][^"\']{10,}["\']', re.IGNORECASE),
+                "description": "Potential hardcoded secret or credential",
+                "recommendation": "Use environment variables or secure credential storage",
+                "cwe_id": "CWE-798",
             },
             # Weak crypto
             {
-                'type': VulnerabilityType.WEAK_CRYPTO,
-                'severity': VulnerabilitySeverity.MEDIUM,
-                'pattern': re.compile(r'(?:md5|sha1)\s*\(', re.IGNORECASE),
-                'description': 'Using weak cryptographic hash function',
-                'recommendation': 'Use SHA-256 or stronger hashing algorithms',
-                'cwe_id': 'CWE-327'
+                "type": VulnerabilityType.WEAK_CRYPTO,
+                "severity": VulnerabilitySeverity.MEDIUM,
+                "pattern": re.compile(r"(?:md5|sha1)\s*\(", re.IGNORECASE),
+                "description": "Using weak cryptographic hash function",
+                "recommendation": "Use SHA-256 or stronger hashing algorithms",
+                "cwe_id": "CWE-327",
             },
             # Insecure deserialization
             {
-                'type': VulnerabilityType.DESERIALIZATION,
-                'severity': VulnerabilitySeverity.HIGH,
-                'pattern': re.compile(r'(?:pickle|cPickle)\.loads?\s*\(', re.IGNORECASE),
-                'description': 'Potential insecure deserialization vulnerability',
-                'recommendation': 'Avoid pickle for untrusted data, use JSON or secure alternatives',
-                'cwe_id': 'CWE-502'
+                "type": VulnerabilityType.DESERIALIZATION,
+                "severity": VulnerabilitySeverity.HIGH,
+                "pattern": re.compile(r"(?:pickle|cPickle)\.loads?\s*\(", re.IGNORECASE),
+                "description": "Potential insecure deserialization vulnerability",
+                "recommendation": "Avoid pickle for untrusted data, use JSON or secure alternatives",
+                "cwe_id": "CWE-502",
             },
             # SSRF
             {
-                'type': VulnerabilityType.SSRF,
-                'severity': VulnerabilitySeverity.HIGH,
-                'pattern': re.compile(r'(?:requests|urllib|httpx)\.\w+\(\s*["\'](.*?(?:\{.*?\}|\$.*?).*?)["\']', re.DOTALL),
-                'description': 'Potential Server-Side Request Forgery vulnerability',
-                'recommendation': 'Validate and whitelist URLs, avoid user-controlled URLs',
-                'cwe_id': 'CWE-918'
+                "type": VulnerabilityType.SSRF,
+                "severity": VulnerabilitySeverity.HIGH,
+                "pattern": re.compile(
+                    r'(?:requests|urllib|httpx)\.\w+\(\s*["\'](.*?(?:\{.*?\}|\$.*?).*?)["\']', re.DOTALL
+                ),
+                "description": "Potential Server-Side Request Forgery vulnerability",
+                "recommendation": "Validate and whitelist URLs, avoid user-controlled URLs",
+                "cwe_id": "CWE-918",
             },
             # Insecure HTTP
             {
-                'type': VulnerabilityType.INSECURE_HTTP,
-                'severity': VulnerabilitySeverity.MEDIUM,
-                'pattern': re.compile(r'https?://[^\s"\']*', re.IGNORECASE),
-                'description': 'HTTP URL found (should use HTTPS)',
-                'recommendation': 'Use HTTPS instead of HTTP for secure communication',
-                'cwe_id': 'CWE-319'
+                "type": VulnerabilityType.INSECURE_HTTP,
+                "severity": VulnerabilitySeverity.MEDIUM,
+                "pattern": re.compile(r'https?://[^\s"\']*', re.IGNORECASE),
+                "description": "HTTP URL found (should use HTTPS)",
+                "recommendation": "Use HTTPS instead of HTTP for secure communication",
+                "cwe_id": "CWE-319",
             },
             # Debug enabled
             {
-                'type': VulnerabilityType.DEBUG_ENABLED,
-                'severity': VulnerabilitySeverity.LOW,
-                'pattern': re.compile(r'debug\s*=\s*True', re.IGNORECASE),
-                'description': 'Debug mode enabled in production',
-                'recommendation': 'Disable debug mode in production environments',
-                'cwe_id': 'CWE-489'
+                "type": VulnerabilityType.DEBUG_ENABLED,
+                "severity": VulnerabilitySeverity.LOW,
+                "pattern": re.compile(r"debug\s*=\s*True", re.IGNORECASE),
+                "description": "Debug mode enabled in production",
+                "recommendation": "Disable debug mode in production environments",
+                "cwe_id": "CWE-489",
             },
             # Eval usage
             {
-                'type': VulnerabilityType.EVAL_USAGE,
-                'severity': VulnerabilitySeverity.MEDIUM,
-                'pattern': re.compile(r'\beval\s*\(', re.IGNORECASE),
-                'description': 'Use of eval() function',
-                'recommendation': 'Avoid eval() with untrusted input, use safer alternatives',
-                'cwe_id': 'CWE-95'
+                "type": VulnerabilityType.EVAL_USAGE,
+                "severity": VulnerabilitySeverity.MEDIUM,
+                "pattern": re.compile(r"\beval\s*\(", re.IGNORECASE),
+                "description": "Use of eval() function",
+                "recommendation": "Avoid eval() with untrusted input, use safer alternatives",
+                "cwe_id": "CWE-95",
             },
         ]
 
@@ -215,9 +229,12 @@ class SASTScanner(BaseScanner):
             threshold_level = severity_order.get(self.config.severity_threshold, 0)
 
             filtered_vulns = [
-                v for v in vulnerabilities
-                if (severity_order.get(v.severity.value, 0) >= threshold_level and
-                    v.confidence >= self.config.min_confidence)
+                v
+                for v in vulnerabilities
+                if (
+                    severity_order.get(v.severity.value, 0) >= threshold_level
+                    and v.confidence >= self.config.min_confidence
+                )
             ]
 
             scan_time = (asyncio.get_event_loop().time() - start_time) * 1000
@@ -233,8 +250,8 @@ class SASTScanner(BaseScanner):
                 metadata={
                     "total_vulnerabilities": len(vulnerabilities),
                     "filtered_vulnerabilities": len(filtered_vulns),
-                    "severity_breakdown": severity_counts
-                }
+                    "severity_breakdown": severity_counts,
+                },
             )
 
         except Exception as e:
@@ -247,7 +264,7 @@ class SASTScanner(BaseScanner):
         vulnerabilities = []
 
         for rule in self._rules:
-            matches = rule['pattern'].findall(content)
+            matches = rule["pattern"].findall(content)
             if matches:
                 # Find line numbers for matches
                 lines = content.splitlines()
@@ -257,19 +274,21 @@ class SASTScanner(BaseScanner):
                             # Extract code snippet
                             start_line = max(1, line_no - 2)
                             end_line = min(len(lines), line_no + 2)
-                            code_snippet = '\n'.join(lines[start_line-1:end_line])
+                            code_snippet = "\n".join(lines[start_line - 1 : end_line])
 
-                            vulnerabilities.append(Vulnerability(
-                                file_path=filename or "<content>",
-                                line_number=line_no,
-                                vulnerability_type=rule['type'],
-                                severity=rule['severity'],
-                                description=rule['description'],
-                                code_snippet=code_snippet,
-                                recommendation=rule['recommendation'],
-                                confidence=self._calculate_confidence(match, rule),
-                                cwe_id=rule.get('cwe_id')
-                            ))
+                            vulnerabilities.append(
+                                Vulnerability(
+                                    file_path=filename or "<content>",
+                                    line_number=line_no,
+                                    vulnerability_type=rule["type"],
+                                    severity=rule["severity"],
+                                    description=rule["description"],
+                                    code_snippet=code_snippet,
+                                    recommendation=rule["recommendation"],
+                                    confidence=self._calculate_confidence(match, rule),
+                                    cwe_id=rule.get("cwe_id"),
+                                )
+                            )
                             break  # Only report first occurrence per match
 
         return vulnerabilities
@@ -280,7 +299,7 @@ class SASTScanner(BaseScanner):
             return []
 
         try:
-            content = file_path.read_text(encoding='utf-8', errors='ignore')
+            content = file_path.read_text(encoding="utf-8", errors="ignore")
             return await self.scan_content(content, str(file_path))
         except (OSError, UnicodeDecodeError) as e:
             self.logger.warning(f"Could not read file {file_path}: {e}")
@@ -299,7 +318,9 @@ class SASTScanner(BaseScanner):
         files_to_scan = []
         for root, dirs, files in os.walk(dir_path):
             # Skip excluded directories
-            dirs[:] = [d for d in dirs if not any(excl in os.path.join(root, d) for excl in self.config.exclude_patterns)]
+            dirs[:] = [
+                d for d in dirs if not any(excl in os.path.join(root, d) for excl in self.config.exclude_patterns)
+            ]
 
             for file in files:
                 file_path = Path(root) / file
@@ -324,11 +345,11 @@ class SASTScanner(BaseScanner):
         confidence = 0.8  # Base confidence
 
         # Adjust based on rule type
-        if rule['type'] in [VulnerabilityType.SQL_INJECTION, VulnerabilityType.COMMAND_INJECTION]:
+        if rule["type"] in [VulnerabilityType.SQL_INJECTION, VulnerabilityType.COMMAND_INJECTION]:
             confidence += 0.1  # These are more reliable patterns
 
         # Reduce confidence for generic patterns
-        if 'potential' in rule['description'].lower():
+        if "potential" in rule["description"].lower():
             confidence -= 0.1
 
         # Reduce confidence for very short matches
@@ -340,9 +361,35 @@ class SASTScanner(BaseScanner):
     def _is_code_file(self, file_path: Path) -> bool:
         """Check if a file is a code file that should be scanned."""
         code_extensions = {
-            '.py', '.js', '.ts', '.java', '.c', '.cpp', '.h', '.hpp', '.cs', '.php', '.rb', '.go',
-            '.rs', '.swift', '.kt', '.scala', '.clj', '.hs', '.ml', '.fs', '.vb', '.pl', '.tcl',
-            '.lua', '.r', '.sh', '.bash', '.zsh', '.ps1'
+            ".py",
+            ".js",
+            ".ts",
+            ".java",
+            ".c",
+            ".cpp",
+            ".h",
+            ".hpp",
+            ".cs",
+            ".php",
+            ".rb",
+            ".go",
+            ".rs",
+            ".swift",
+            ".kt",
+            ".scala",
+            ".clj",
+            ".hs",
+            ".ml",
+            ".fs",
+            ".vb",
+            ".pl",
+            ".tcl",
+            ".lua",
+            ".r",
+            ".sh",
+            ".bash",
+            ".zsh",
+            ".ps1",
         }
 
         return file_path.suffix.lower() in code_extensions

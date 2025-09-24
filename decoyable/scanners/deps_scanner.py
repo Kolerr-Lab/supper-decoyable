@@ -2,8 +2,8 @@
 Dependencies scanner implementation with dependency injection support.
 """
 
-import asyncio
 import ast
+import asyncio
 import os
 from collections import defaultdict
 from dataclasses import dataclass
@@ -12,12 +12,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from decoyable.core.logging import get_logger
-from decoyable.scanners.interfaces import BaseScanner, ScanReport, ScanResult, ScannerType, ScannerConfig
+from decoyable.scanners.interfaces import BaseScanner, ScannerConfig, ScannerType, ScanReport, ScanResult
 
 
 @dataclass
 class DependencyIssue:
     """Represents a dependency-related issue."""
+
     issue_type: str  # "missing_import", "unused_dependency", "version_conflict"
     module_name: str
     description: str
@@ -33,6 +34,7 @@ class DependencyIssue:
 @dataclass
 class DependenciesScannerConfig:
     """Configuration for the dependencies scanner."""
+
     enabled: bool = True
     timeout_seconds: int = 120
     max_file_size_mb: int = 5
@@ -78,8 +80,10 @@ class DependenciesScanner(BaseScanner):
             return await self._create_report(
                 issues,
                 scan_time,
-                metadata={"missing_count": len([i for i in issues if i.issue_type == "missing_import"]),
-                         "unused_count": len([i for i in issues if i.issue_type == "unused_dependency"])}
+                metadata={
+                    "missing_count": len([i for i in issues if i.issue_type == "missing_import"]),
+                    "unused_count": len([i for i in issues if i.issue_type == "unused_dependency"]),
+                },
             )
 
         except Exception as e:
@@ -96,18 +100,20 @@ class DependenciesScanner(BaseScanner):
 
             # Check for potentially problematic imports
             for imp in imports:
-                if imp.startswith('__future__'):
+                if imp.startswith("__future__"):
                     continue  # Skip __future__ imports
 
                 # Check for relative imports that might be problematic
-                if imp.startswith('.'):
-                    issues.append(DependencyIssue(
-                        issue_type="relative_import",
-                        module_name=imp,
-                        description=f"Relative import '{imp}' found",
-                        severity="low",
-                        suggestions=["Consider using absolute imports for better maintainability"]
-                    ))
+                if imp.startswith("."):
+                    issues.append(
+                        DependencyIssue(
+                            issue_type="relative_import",
+                            module_name=imp,
+                            description=f"Relative import '{imp}' found",
+                            severity="low",
+                            suggestions=["Consider using absolute imports for better maintainability"],
+                        )
+                    )
 
             return issues
 
@@ -126,7 +132,7 @@ class DependenciesScanner(BaseScanner):
         for file_path in python_files[:500]:  # Limit to 500 files
             try:
                 if self.should_scan_file(file_path):
-                    content = file_path.read_text(encoding='utf-8', errors='ignore')
+                    content = file_path.read_text(encoding="utf-8", errors="ignore")
                     imports = await self.scan_content(content, str(file_path))
                     # Also extract basic imports
                     tree_imports = self._extract_imports_from_content(content)
@@ -139,19 +145,67 @@ class DependenciesScanner(BaseScanner):
         missing_imports = []
 
         for imp in all_imports:
-            if imp in ['os', 'sys', 'json', 're', 'typing', 'pathlib', 'collections', 'itertools',
-                      'functools', 'operator', 'datetime', 'time', 'math', 'random', 'hashlib',
-                      'urllib', 'http', 'socket', 'threading', 'multiprocessing', 'asyncio',
-                      'concurrent', 'subprocess', 'tempfile', 'shutil', 'glob', 'fnmatch',
-                      'linecache', 'pickle', 'copyreg', 'copy', 'pprint', 'reprlib', 'enum',
-                      'numbers', 'cmath', 'decimal', 'fractions', 'statistics', 'ast', 'inspect',
-                      'site', 'warnings', 'contextlib', 'abc', 'atexit', 'traceback', 'gc',
-                      'inspect', 'site', 'warnings', 'weakref', 'gc', 'inspect']:
+            if imp in [
+                "os",
+                "sys",
+                "json",
+                "re",
+                "typing",
+                "pathlib",
+                "collections",
+                "itertools",
+                "functools",
+                "operator",
+                "datetime",
+                "time",
+                "math",
+                "random",
+                "hashlib",
+                "urllib",
+                "http",
+                "socket",
+                "threading",
+                "multiprocessing",
+                "asyncio",
+                "concurrent",
+                "subprocess",
+                "tempfile",
+                "shutil",
+                "glob",
+                "fnmatch",
+                "linecache",
+                "pickle",
+                "copyreg",
+                "copy",
+                "pprint",
+                "reprlib",
+                "enum",
+                "numbers",
+                "cmath",
+                "decimal",
+                "fractions",
+                "statistics",
+                "ast",
+                "inspect",
+                "site",
+                "warnings",
+                "contextlib",
+                "abc",
+                "atexit",
+                "traceback",
+                "gc",
+                "inspect",
+                "site",
+                "warnings",
+                "weakref",
+                "gc",
+                "inspect",
+            ]:
                 continue  # Standard library
 
-            if '.' in imp:
+            if "." in imp:
                 # Check top-level package
-                top_level = imp.split('.')[0]
+                top_level = imp.split(".")[0]
                 if top_level not in installed_packages:
                     missing_imports.append(imp)
             elif imp not in installed_packages:
@@ -164,13 +218,15 @@ class DependenciesScanner(BaseScanner):
             if providers:
                 suggestions.extend([f"pip install {pkg}" for pkg in providers[:3]])
 
-            issues.append(DependencyIssue(
-                issue_type="missing_import",
-                module_name=missing,
-                description=f"Import '{missing}' not found in installed packages",
-                severity="high",
-                suggestions=suggestions
-            ))
+            issues.append(
+                DependencyIssue(
+                    issue_type="missing_import",
+                    module_name=missing,
+                    description=f"Import '{missing}' not found in installed packages",
+                    severity="high",
+                    suggestions=suggestions,
+                )
+            )
 
         return issues
 
@@ -184,19 +240,24 @@ class DependenciesScanner(BaseScanner):
         try:
             requirements_file = path / "requirements.txt"
             if requirements_file.exists():
-                with open(requirements_file, 'r', encoding='utf-8') as f:
-                    requirements = [line.strip().split('==')[0].split('>=')[0].split('<')[0].split('>')[0]
-                                  for line in f if line.strip() and not line.startswith('#')]
+                with open(requirements_file, encoding="utf-8") as f:
+                    requirements = [
+                        line.strip().split("==")[0].split(">=")[0].split("<")[0].split(">")[0]
+                        for line in f
+                        if line.strip() and not line.startswith("#")
+                    ]
 
                 # For now, just flag this as informational
-                issues.append(DependencyIssue(
-                    issue_type="unused_dependency_check",
-                    module_name="requirements.txt",
-                    description=f"Found {len(requirements)} dependencies in requirements.txt",
-                    severity="info",
-                    suggestions=["Consider auditing requirements.txt for unused packages"],
-                    is_issue=False
-                ))
+                issues.append(
+                    DependencyIssue(
+                        issue_type="unused_dependency_check",
+                        module_name="requirements.txt",
+                        description=f"Found {len(requirements)} dependencies in requirements.txt",
+                        severity="info",
+                        suggestions=["Consider auditing requirements.txt for unused packages"],
+                        is_issue=False,
+                    )
+                )
 
         except Exception as e:
             self.logger.debug(f"Could not check requirements.txt: {e}")
@@ -214,12 +275,12 @@ class DependenciesScanner(BaseScanner):
 
             # Limit depth
             rel_path = os.path.relpath(dirpath, root)
-            if rel_path != '.' and rel_path.count(os.sep) >= self.config.scan_depth:
+            if rel_path != "." and rel_path.count(os.sep) >= self.config.scan_depth:
                 dirnames[:] = []  # Don't recurse deeper
                 continue
 
             for filename in filenames:
-                if filename.endswith('.py'):
+                if filename.endswith(".py"):
                     python_files.append(Path(dirpath) / filename)
 
         return python_files
@@ -234,19 +295,20 @@ class DependenciesScanner(BaseScanner):
             for node in ast.walk(tree):
                 if isinstance(node, ast.Import):
                     for alias in node.names:
-                        imports.add(alias.name.split('.')[0])
+                        imports.add(alias.name.split(".")[0])
                 elif isinstance(node, ast.ImportFrom):
                     if node.module:
-                        imports.add(node.module.split('.')[0])
+                        imports.add(node.module.split(".")[0])
 
         except SyntaxError:
             # Fallback: simple regex-based extraction
             import re
-            import_matches = re.findall(r'^(?:from\s+(\w+)|import\s+(\w+))', content, re.MULTILINE)
+
+            import_matches = re.findall(r"^(?:from\s+(\w+)|import\s+(\w+))", content, re.MULTILINE)
             for match in import_matches:
                 module = match[0] or match[1]
                 if module:
-                    imports.add(module.split('.')[0])
+                    imports.add(module.split(".")[0])
 
         return imports
 
@@ -272,8 +334,8 @@ class DependenciesScanner(BaseScanner):
         try:
             packages = {}
             for dist in importlib_metadata.distributions():
-                name = dist.metadata.get('Name', '').lower()
-                version = dist.metadata.get('Version', '')
+                name = dist.metadata.get("Name", "").lower()
+                version = dist.metadata.get("Version", "")
                 if name:
                     packages[name] = version
 
@@ -282,7 +344,7 @@ class DependenciesScanner(BaseScanner):
                     for file in dist.files:
                         if file.parts and len(file.parts) >= 2:
                             top_level = file.parts[0]
-                            if top_level.endswith('.py') or (len(file.parts) > 1 and file.parts[1] == '__init__.py'):
+                            if top_level.endswith(".py") or (len(file.parts) > 1 and file.parts[1] == "__init__.py"):
                                 packages[top_level] = version
 
             self._installed_packages = packages
@@ -296,38 +358,38 @@ class DependenciesScanner(BaseScanner):
         """Find potential package providers for a module."""
         # This is a simplified mapping - in practice, you'd want a more comprehensive mapping
         common_mappings = {
-            'requests': ['requests'],
-            'flask': ['flask'],
-            'django': ['django'],
-            'fastapi': ['fastapi'],
-            'pydantic': ['pydantic', 'pydantic-settings'],
-            'sqlalchemy': ['sqlalchemy'],
-            'redis': ['redis'],
-            'celery': ['celery'],
-            'pytest': ['pytest'],
-            'black': ['black'],
-            'isort': ['isort'],
-            'mypy': ['mypy'],
-            'flake8': ['flake8'],
-            'pandas': ['pandas'],
-            'numpy': ['numpy'],
-            'matplotlib': ['matplotlib'],
-            'scikit-learn': ['scikit-learn'],
-            'tensorflow': ['tensorflow'],
-            'torch': ['torch'],
-            'transformers': ['transformers'],
-            'openai': ['openai'],
-            'anthropic': ['anthropic'],
-            'google': ['google-cloud', 'google-auth'],
-            'boto3': ['boto3'],
-            'kubernetes': ['kubernetes'],
-            'docker': ['docker'],
-            'click': ['click'],
-            'typer': ['typer'],
-            'rich': ['rich'],
-            'tqdm': ['tqdm'],
-            'uvicorn': ['uvicorn'],
-            'gunicorn': ['gunicorn'],
+            "requests": ["requests"],
+            "flask": ["flask"],
+            "django": ["django"],
+            "fastapi": ["fastapi"],
+            "pydantic": ["pydantic", "pydantic-settings"],
+            "sqlalchemy": ["sqlalchemy"],
+            "redis": ["redis"],
+            "celery": ["celery"],
+            "pytest": ["pytest"],
+            "black": ["black"],
+            "isort": ["isort"],
+            "mypy": ["mypy"],
+            "flake8": ["flake8"],
+            "pandas": ["pandas"],
+            "numpy": ["numpy"],
+            "matplotlib": ["matplotlib"],
+            "scikit-learn": ["scikit-learn"],
+            "tensorflow": ["tensorflow"],
+            "torch": ["torch"],
+            "transformers": ["transformers"],
+            "openai": ["openai"],
+            "anthropic": ["anthropic"],
+            "google": ["google-cloud", "google-auth"],
+            "boto3": ["boto3"],
+            "kubernetes": ["kubernetes"],
+            "docker": ["docker"],
+            "click": ["click"],
+            "typer": ["typer"],
+            "rich": ["rich"],
+            "tqdm": ["tqdm"],
+            "uvicorn": ["uvicorn"],
+            "gunicorn": ["gunicorn"],
         }
 
         return common_mappings.get(module_name, [])

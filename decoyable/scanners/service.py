@@ -6,13 +6,13 @@ import asyncio
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from decoyable.core.config import Settings
-from decoyable.core.logging import get_logger, LoggingService
 from decoyable.core.cache_service import CacheService
+from decoyable.core.config import Settings
+from decoyable.core.logging import LoggingService, get_logger
 from decoyable.scanners.deps_scanner import DependenciesScanner, DependenciesScannerConfig, DependencyIssue
-from decoyable.scanners.interfaces import ScanReport, ScannerType
+from decoyable.scanners.interfaces import ScannerType, ScanReport
 from decoyable.scanners.sast_scanner import SASTScanner, SASTScannerConfig, Vulnerability
-from decoyable.scanners.secrets_scanner import SecretsScanner, SecretsScannerConfig, SecretFinding
+from decoyable.scanners.secrets_scanner import SecretFinding, SecretsScanner, SecretsScannerConfig
 
 
 class ScannerService:
@@ -29,7 +29,7 @@ class ScannerService:
             timeout_seconds=config.scanners.timeout_seconds,
             max_file_size_mb=config.scanners.max_file_size_mb,
             exclude_patterns=config.scanners.exclude_patterns,
-            min_confidence=config.scanners.min_confidence
+            min_confidence=config.scanners.min_confidence,
         )
 
         self.deps_config = DependenciesScannerConfig(
@@ -38,7 +38,7 @@ class ScannerService:
             max_file_size_mb=config.scanners.max_file_size_mb,
             exclude_patterns=config.scanners.exclude_patterns,
             check_missing_imports=config.scanners.check_missing_imports,
-            check_unused_dependencies=config.scanners.check_unused_dependencies
+            check_unused_dependencies=config.scanners.check_unused_dependencies,
         )
 
         self.sast_config = SASTScannerConfig(
@@ -47,7 +47,7 @@ class ScannerService:
             max_file_size_mb=config.scanners.max_file_size_mb,
             exclude_patterns=config.scanners.exclude_patterns,
             min_confidence=config.scanners.min_confidence,
-            severity_threshold=config.scanners.severity_threshold
+            severity_threshold=config.scanners.severity_threshold,
         )
 
         # Initialize scanners
@@ -58,7 +58,7 @@ class ScannerService:
         self._all_scanners = {
             ScannerType.SECRETS: self.secrets_scanner,
             ScannerType.DEPENDENCIES: self.deps_scanner,
-            ScannerType.SAST: self.sast_scanner
+            ScannerType.SAST: self.sast_scanner,
         }
 
     async def scan_all(self, path: Union[str, "Path"], **kwargs) -> Dict[ScannerType, ScanReport]:
@@ -90,14 +90,18 @@ class ScannerService:
                 results[scanner_type] = ScanReport(
                     scanner_type=scanner_type,
                     results=[],
-                    summary=type('Summary', (), {
-                        'total_items': 0,
-                        'issues_found': 0,
-                        'scan_time_ms': 0.0,
-                        'result': 'failure',
-                        'metadata': {'error': str(e)}
-                    })(),
-                    timestamp=asyncio.get_event_loop().time()
+                    summary=type(
+                        "Summary",
+                        (),
+                        {
+                            "total_items": 0,
+                            "issues_found": 0,
+                            "scan_time_ms": 0.0,
+                            "result": "failure",
+                            "metadata": {"error": str(e)},
+                        },
+                    )(),
+                    timestamp=asyncio.get_event_loop().time(),
                 )
 
         return results
@@ -106,12 +110,9 @@ class ScannerService:
         """Scan for secrets only."""
         if self.cache_service:
             # Use cached version with 30 minute TTL
-            return await self.cache_service.cached(
-                ttl=1800,
-                key_prefix="secrets",
-                scan_type="secrets",
-                persist=True
-            )(self._scan_secrets_uncached)(path, **kwargs)
+            return await self.cache_service.cached(ttl=1800, key_prefix="secrets", scan_type="secrets", persist=True)(
+                self._scan_secrets_uncached
+            )(path, **kwargs)
         else:
             return await self._scan_secrets_uncached(path, **kwargs)
 
@@ -123,12 +124,9 @@ class ScannerService:
         """Scan for dependency issues only."""
         if self.cache_service:
             # Use cached version with 1 hour TTL
-            return await self.cache_service.cached(
-                ttl=3600,
-                key_prefix="deps",
-                scan_type="dependencies",
-                persist=True
-            )(self._scan_dependencies_uncached)(path, **kwargs)
+            return await self.cache_service.cached(ttl=3600, key_prefix="deps", scan_type="dependencies", persist=True)(
+                self._scan_dependencies_uncached
+            )(path, **kwargs)
         else:
             return await self._scan_dependencies_uncached(path, **kwargs)
 
@@ -140,12 +138,9 @@ class ScannerService:
         """Scan for security vulnerabilities only."""
         if self.cache_service:
             # Use cached version with 30 minute TTL
-            return await self.cache_service.cached(
-                ttl=1800,
-                key_prefix="sast",
-                scan_type="sast",
-                persist=True
-            )(self._scan_sast_uncached)(path, **kwargs)
+            return await self.cache_service.cached(ttl=1800, key_prefix="sast", scan_type="sast", persist=True)(
+                self._scan_sast_uncached
+            )(path, **kwargs)
         else:
             return await self._scan_sast_uncached(path, **kwargs)
 
@@ -153,23 +148,22 @@ class ScannerService:
         """Uncached SAST scan implementation."""
         return await self.sast_scanner.scan_path(path, **kwargs)
 
-    async def _scan_with_type(self, scanner_type: ScannerType, scanner, path: Union[str, "Path"], **kwargs) -> ScanReport:
+    async def _scan_with_type(
+        self, scanner_type: ScannerType, scanner, path: Union[str, "Path"], **kwargs
+    ) -> ScanReport:
         """Helper to scan with a specific scanner type."""
         with scanner.logger.get_logger(f"scan.{scanner_type.value}").correlation_context() as corr_id:
-            scanner.logger.info(f"Starting {scanner_type.value} scan", extra={'path': str(path)})
+            scanner.logger.info(f"Starting {scanner_type.value} scan", extra={"path": str(path)})
             report = await scanner.scan_path(path, **kwargs)
-            scanner.logger.info(f"Completed {scanner_type.value} scan", extra={
-                'issues_found': len(report.results),
-                'scan_time_ms': report.summary.scan_time_ms
-            })
+            scanner.logger.info(
+                f"Completed {scanner_type.value} scan",
+                extra={"issues_found": len(report.results), "scan_time_ms": report.summary.scan_time_ms},
+            )
             return report
 
     def get_scanner_status(self) -> Dict[str, bool]:
         """Get the enabled status of all scanners."""
-        return {
-            scanner_type.value: scanner.is_enabled()
-            for scanner_type, scanner in self._all_scanners.items()
-        }
+        return {scanner_type.value: scanner.is_enabled() for scanner_type, scanner in self._all_scanners.items()}
 
     def get_scan_summary(self, results: Dict[ScannerType, ScanReport]) -> Dict[str, Any]:
         """Generate a summary of all scan results."""
@@ -181,17 +175,17 @@ class ScannerService:
             total_issues += len(report.results)
             total_scan_time += report.summary.scan_time_ms
             scanner_summaries[scanner_type.value] = {
-                'issues_found': len(report.results),
-                'scan_time_ms': report.summary.scan_time_ms,
-                'result': report.summary.result.value,
-                'metadata': report.summary.metadata or {}
+                "issues_found": len(report.results),
+                "scan_time_ms": report.summary.scan_time_ms,
+                "result": report.summary.result.value,
+                "metadata": report.summary.metadata or {},
             }
 
         return {
-            'total_issues': total_issues,
-            'total_scan_time_ms': total_scan_time,
-            'scanner_summaries': scanner_summaries,
-            'timestamp': asyncio.get_event_loop().time()
+            "total_issues": total_issues,
+            "total_scan_time_ms": total_scan_time,
+            "scanner_summaries": scanner_summaries,
+            "timestamp": asyncio.get_event_loop().time(),
         }
 
 
@@ -199,9 +193,10 @@ class ScannerService:
 async def scan_secrets(path: Union[str, "Path"]) -> List[SecretFinding]:
     """Backward compatibility function for secrets scanning."""
     from decoyable.core.registry import ServiceRegistry
+
     registry = ServiceRegistry()
-    config = registry.get_by_name('config')
-    logging_service = registry.get_by_name('logging')
+    config = registry.get_by_name("config")
+    logging_service = registry.get_by_name("logging")
 
     if not config or not logging_service:
         raise RuntimeError("Services not properly initialized")
@@ -214,9 +209,10 @@ async def scan_secrets(path: Union[str, "Path"]) -> List[SecretFinding]:
 async def scan_dependencies(path: Union[str, "Path"]) -> tuple[List[str], Dict[str, List[str]]]:
     """Backward compatibility function for dependency scanning."""
     from decoyable.core.registry import ServiceRegistry
+
     registry = ServiceRegistry()
-    config = registry.get_by_name('config')
-    logging_service = registry.get_by_name('logging')
+    config = registry.get_by_name("config")
+    logging_service = registry.get_by_name("logging")
 
     if not config or not logging_service:
         raise RuntimeError("Services not properly initialized")
@@ -234,9 +230,10 @@ async def scan_dependencies(path: Union[str, "Path"]) -> tuple[List[str], Dict[s
 async def scan_sast(path: Union[str, "Path"]) -> Dict[str, Any]:
     """Backward compatibility function for SAST scanning."""
     from decoyable.core.registry import ServiceRegistry
+
     registry = ServiceRegistry()
-    config = registry.get_by_name('config')
-    logging_service = registry.get_by_name('logging')
+    config = registry.get_by_name("config")
+    logging_service = registry.get_by_name("logging")
 
     if not config or not logging_service:
         raise RuntimeError("Services not properly initialized")
@@ -246,13 +243,13 @@ async def scan_sast(path: Union[str, "Path"]) -> Dict[str, Any]:
 
     # Convert to old format
     return {
-        'vulnerabilities': report.results,
-        'summary': {
-            'total': len(report.results),
-            'critical': len([v for v in report.results if v.severity.value == 'CRITICAL']),
-            'high': len([v for v in report.results if v.severity.value == 'HIGH']),
-            'medium': len([v for v in report.results if v.severity.value == 'MEDIUM']),
-            'low': len([v for v in report.results if v.severity.value == 'LOW']),
-            'info': len([v for v in report.results if v.severity.value == 'INFO'])
-        }
+        "vulnerabilities": report.results,
+        "summary": {
+            "total": len(report.results),
+            "critical": len([v for v in report.results if v.severity.value == "CRITICAL"]),
+            "high": len([v for v in report.results if v.severity.value == "HIGH"]),
+            "medium": len([v for v in report.results if v.severity.value == "MEDIUM"]),
+            "low": len([v for v in report.results if v.severity.value == "LOW"]),
+            "info": len([v for v in report.results if v.severity.value == "INFO"]),
+        },
     }

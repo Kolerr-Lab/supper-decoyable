@@ -202,7 +202,7 @@ class SecretScanner:
                 "secret_type": f.secret_type,
                 "match": f.match,
                 "context": f.context,
-                "masked": f.masked()
+                "masked": f.masked(),
             }
             for f in findings
         ]
@@ -225,7 +225,7 @@ class SecretScanner:
                 "secret_type": f.secret_type,
                 "match": f.match,
                 "context": f.context,
-                "masked": f.masked()
+                "masked": f.masked(),
             }
             for f in findings
         ]
