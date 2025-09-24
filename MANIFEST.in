@@ -1,0 +1,44 @@
+include README.md
+include LICENSE
+include CHANGELOG.md
+include SECURITY.md
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
+include COMMUNITY.md
+include ROADMAP.md
+include RELEASES.md
+include requirements.txt
+include pyproject.toml
+include pytest.ini
+include .pre-commit-config.yaml
+include docker-compose.yml
+include Dockerfile
+include install.sh
+include run_full_check.sh
+include comprehensive_self_test.sh
+include demo.py
+include generate_ssl.py
+recursive-include docs *
+recursive-include docker *
+recursive-include grafana *
+recursive-include nginx *
+recursive-include prometheus *
+recursive-include ssl *
+recursive-include vscode-extension *
+exclude .git*
+exclude __pycache__
+exclude *.pyc
+exclude .pytest_cache
+exclude .mypy_cache
+exclude .ruff_cache
+exclude .coverage
+exclude bandit-report.json
+exclude defense-bandit-report.json
+exclude decoyable.db
+exclude decoyable_knowledge.db
+exclude logs/*
+exclude nuclear_test_dataset/*
+exclude secrets/*
+exclude .env
+exclude .env.example
+exclude .vscode/settings.json

@@ -1,6 +1,6 @@
 """DECOYABLE - Enterprise-grade cybersecurity scanning tool."""
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 __author__ = "DECOYABLE Team"
 __description__ = "Enterprise-grade cybersecurity scanning tool for secrets, dependencies, and vulnerabilities"
 

@@ -12,14 +12,15 @@
 
 🔍 **Find secrets, vulnerabilities, and attack patterns in your code**  
 🛡️ **Active defense with AI-powered honeypots**  
-⚡ **Sub-30ms scanning with enterprise-grade performance**
+⚡ **Sub-30ms scanning with enterprise-grade performance**  
+📦 **Available on PyPI: `pip install decoyable`**
 
 👥 **[Join the Community](COMMUNITY.md)** | 📖 **[Documentation](https://github.com/Kolerr-Lab/supper-decoyable/wiki)** | 🐛 **[Report Issues](https://github.com/Kolerr-Lab/supper-decoyable/issues)**
 
 ## 🚀 Quick Demo (2 minutes)
 
 ```bash
-# Install DECOYABLE
+# Install DECOYABLE from PyPI
 pip install decoyable
 
 # Scan your code for security issues
@@ -27,7 +28,7 @@ decoyable scan .
 
 # See results like this:
 🔍 Found 3 secrets in config.py
-� SQL injection vulnerability in api.py
+💻 SQL injection vulnerability in api.py
 ✅ No dependency vulnerabilities
 ```
 
@@ -107,7 +108,16 @@ DECOYABLE has been **battle-tested at extreme scale** and proven **production-re
 
 ## ⚡ Installation & Quick Start
 
-### 🚀 One-Command Install (Recommended)
+### 🚀 PyPI Install (Recommended)
+
+DECOYABLE is now available on PyPI! Install globally with:
+
+```bash
+pip install decoyable
+decoyable scan .
+```
+
+### 🐳 One-Command Install (Alternative)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Kolerr-Lab/supper-decoyable/main/install.sh | bash
@@ -118,13 +128,7 @@ Then scan your code:
 decoyable scan .
 ```
 
-### 📦 Manual Installation
-
-**Pip Install:**
-```bash
-pip install decoyable
-decoyable scan .
-```
+### 📦 Other Installation Methods
 
 **Docker (Full Stack):**
 ```bash
@@ -132,7 +136,7 @@ docker-compose up -d
 curl http://localhost:8000/scan/all -X POST -H "Content-Type: application/json" -d '{"path": "."}'
 ```
 
-**From Source:**
+**From Source (Development):**
 ```bash
 git clone https://github.com/Kolerr-Lab/supper-decoyable.git
 cd supper-decoyable

@@ -1,2 +1,2 @@
 [console_scripts]
-decoyable = decoyable.core.cli:main
+decoyable = main:main
