@@ -76,48 +76,66 @@ def run_demo_scan(scan_dir):
     print("=" * 50)
 
     try:
-        # Import DECOYABLE components
-        from decoyable.scanners.secrets_scanner import SecretsScanner
-        from decoyable.scanners.sast_scanner import SASTScanner
-        from decoyable.scanners.deps_scanner import DependenciesScanner
+        # Import DECOYABLE components and setup services
+        from decoyable.core.main import setup_services
+        from decoyable.scanners.secrets_scanner import SecretsScanner, SecretsScannerConfig
+        from decoyable.scanners.sast_scanner import SASTScanner, SASTScannerConfig
+        from decoyable.scanners.deps_scanner import DependenciesScanner, DependenciesScannerConfig
 
-        # Initialize scanners
-        secrets_scanner = SecretsScanner()
-        sast_scanner = SASTScanner()
-        deps_scanner = DependenciesScanner()
+        # Setup all services properly
+        config, registry, cli_service = setup_services()
+
+        # Initialize scanners with proper config
+        secrets_config = SecretsScannerConfig()
+        sast_config = SASTScannerConfig()
+        deps_config = DependenciesScannerConfig()
+
+        secrets_scanner = SecretsScanner(secrets_config)
+        sast_scanner = SASTScanner(sast_config)
+        deps_scanner = DependenciesScanner(deps_config)
 
         total_findings = 0
 
         # Scan for secrets
         print("🔑 Scanning for secrets...")
+        import asyncio
         for py_file in scan_dir.glob("*.py"):
-            findings = secrets_scanner.scan_file(str(py_file))
-            if findings:
-                print(f"  📁 {py_file.name}:")
-                for finding in findings:
-                    print(f"    🚨 {finding.secret_type}: {finding.match[:20]}...")
-                    total_findings += 1
+            try:
+                report = asyncio.run(secrets_scanner.scan_path(str(py_file)))
+                if report.results:
+                    print(f"  📁 {py_file.name}:")
+                    for finding in report.results:
+                        print(f"    🚨 {finding.secret_type}: {finding.match[:20]}...")
+                        total_findings += 1
+            except Exception as e:
+                print(f"  ❌ Error scanning {py_file.name}: {e}")
 
         # Scan for SAST vulnerabilities
         print("\n💻 Scanning for code vulnerabilities...")
         for py_file in scan_dir.glob("*.py"):
-            findings = sast_scanner.scan_file(str(py_file))
-            if findings:
-                print(f"  📁 {py_file.name}:")
-                for finding in findings:
-                    print(f"    🚨 {finding.vulnerability_type}: {finding.description}")
-                    total_findings += 1
+            try:
+                report = asyncio.run(sast_scanner.scan_path(str(py_file)))
+                if report.results:
+                    print(f"  📁 {py_file.name}:")
+                    for finding in report.results:
+                        print(f"    🚨 {finding.vulnerability_type}: {finding.description}")
+                        total_findings += 1
+            except Exception as e:
+                print(f"  ❌ Error scanning {py_file.name}: {e}")
 
         # Scan dependencies
         print("\n📦 Scanning dependencies...")
         req_file = scan_dir / "requirements.txt"
         if req_file.exists():
-            findings = deps_scanner.scan_dependencies(str(req_file))
-            if findings:
-                for finding in findings:
-                    print(f"  🚨 Vulnerable package: {finding.package} {finding.version}")
-                    print(f"    💡 {finding.description}")
-                    total_findings += 1
+            try:
+                report = asyncio.run(deps_scanner.scan_path(str(req_file)))
+                if report.results:
+                    for finding in report.results:
+                        print(f"  🚨 Vulnerable package: {finding.package} {finding.version}")
+                        print(f"    💡 {finding.description}")
+                        total_findings += 1
+            except Exception as e:
+                print(f"  ❌ Error scanning dependencies: {e}")
 
         print("\n" + "=" * 50)
         print(f"🎯 DEMO COMPLETE: Found {total_findings} security issues!")
