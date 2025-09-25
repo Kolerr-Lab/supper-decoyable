@@ -1,0 +1,375 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: decoyable-fastapi:latest
+    env_file: .env
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-app}
+      - REDIS_URL=redis://redis:6379/0
+      - APP_ENV=${APP_ENV:-development}
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000" # exposed for local testing; Nginx will proxy in production
+    secrets:
+      - postgres_password
+      - redis_password
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  db:
+    image: postgres:13-alpine
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    env_file: .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-app}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-app}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - db_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:6-alpine
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+    tmpfs:
+      - /tmp
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--requirepass",
+        "$REDIS_PASSWORD",
+      ]
+    volumes:
+      - redis-data:/data
+    secrets:
+      - redis_password
+    networks:
+      - cache_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Decoy services for active cyber defense
+  # These services run on isolated ports to attract attackers
+  decoy_ssh:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: decoyable-decoy-ssh:latest
+    env_file: .env
+    environment:
+      - DECOY_PORTS=2222
+      - DECOY_SERVICE=ssh
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 64M
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    ports:
+      - "2222:2222" # Exposed decoy SSH port
+    networks:
+      - decoy_network # Isolated network - attackers cannot reach production
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:8000/decoy/status || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  decoy_http:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: decoyable-decoy-http:latest
+    env_file: .env
+    environment:
+      - DECOY_PORTS=8080,8443
+      - DECOY_SERVICE=http
+    deploy:
+      resources:
+        limits:
+          cpus: "0.10"
+          memory: 64M
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    ports:
+      - "8080:8080" # Exposed decoy HTTP port
+      - "8443:8443" # Exposed decoy HTTPS port
+    networks:
+      - decoy_network # Isolated network - attackers cannot reach production
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -f http://localhost:8000/decoy/status || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: decoyable-celery:latest
+    env_file: .env
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-app}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - APP_ENV=${APP_ENV:-development}
+    depends_on:
+      - db
+      - redis
+    secrets:
+      - postgres_password
+      - redis_password
+    networks:
+      - app_network
+      - db_network
+      - cache_network
+    command:
+      [
+        "celery",
+        "-A",
+        "decoyable.tasks",
+        "worker",
+        "--loglevel=info",
+        "--queues=security",
+      ]
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'OK'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:stable-alpine
+    entrypoint: []
+    command:
+      [
+        "sh",
+        "-c",
+        "mkdir -p /var/cache/nginx /var/run && nginx -g 'daemon off;'",
+      ]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+    # read_only: true  # Disabled for nginx cache directory access
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - SETGID
+      - SETUID
+      - CHOWN
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/ssl/certs:ro
+    networks:
+      - public_network
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring_network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+    read_only: true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+      - /var/run
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring_network
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    profiles: ["kafka"]  # Only start with --profile kafka
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    profiles: ["kafka"]  # Only start with --profile kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    ports:
+      - "9092:9092"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
+
+volumes:
+  db-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+  kafka_data:
+
+networks:
+  app_network:
+    driver: bridge
+    internal: true
+  db_network:
+    driver: bridge
+    internal: true
+  cache_network:
+    driver: bridge
+    internal: true
+  public_network:
+    driver: bridge
+  monitoring_network:
+    driver: bridge
+    internal: true
+  decoy_network:
+    driver: bridge
+    # NOTE: This network is intentionally NOT internal to allow external attacker access
+    # Attackers can reach decoy services but cannot reach production services
