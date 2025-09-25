@@ -24,7 +24,7 @@
 pip install decoyable
 
 # Scan your code for security issues
-decoyable scan .
+decoyable scan all
 
 # See results like this:
 🔍 Found 3 secrets in config.py
@@ -118,7 +118,7 @@ DECOYABLE is now available on PyPI! Install globally with:
 
 ```bash
 pip install decoyable
-decoyable scan .
+decoyable scan all
 ```
 
 ### 🐳 One-Command Install (Alternative)
@@ -129,7 +129,7 @@ curl -fsSL https://raw.githubusercontent.com/Kolerr-Lab/supper-decoyable/main/in
 
 Then scan your code:
 ```bash
-decoyable scan .
+decoyable scan all
 ```
 
 ### 📦 Other Installation Methods
@@ -448,9 +448,9 @@ decoyable scan sast .              # Static application security testing
 decoyable scan all .               # Run all scanners
 
 # Active defense monitoring
-decoyable defense status           # Show honeypot status
-decoyable defense logs             # View recent attacks
-decoyable defense patterns         # Show learned attack patterns
+decoyable honeypot status           # Show honeypot status
+decoyable honeypot attacks          # View recent attacks
+decoyable honeypot patterns         # Show learned attack patterns
 ```
 
 #### API Usage

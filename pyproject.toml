@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "decoyable"
-version = "1.0.0"
+version = "1.0.2"
 description = "Next-Generation Active Cyber Defense Platform - Find secrets, vulnerabilities, and attack patterns in your code"
 readme = "README.md"
 requires-python = ">=3.11"
