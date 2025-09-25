@@ -127,7 +127,7 @@ class CLIService:
                     for vuln in sorted(
                         vulnerabilities,
                         key=lambda x: severity_order.index(
-                            x["severity"].value if hasattr(x["severity"], "value") else str(x["severity"])
+                            x.severity.value if hasattr(x.severity, "value") else str(x.severity)
                         ),
                     ):
                         severity = vuln.severity.value if hasattr(vuln.severity, "value") else vuln.severity

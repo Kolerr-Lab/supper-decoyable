@@ -74,7 +74,7 @@ Issues = "https://github.com/Kolerr-Lab/supper-decoyable/issues"
 Changelog = "https://github.com/Kolerr-Lab/supper-decoyable/blob/main/CHANGELOG.md"
 
 [project.scripts]
-decoyable = "decoyable.core.cli:main"
+decoyable = "decoyable.core.main:main"
 
 [tool.black]
 line-length = 120

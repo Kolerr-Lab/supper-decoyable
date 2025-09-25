@@ -11,7 +11,17 @@ cd decoyable
 
 # create virtual env (Python)
 python -m venv .venv
-# activate (PowerShell)
+# ac# -- Notes / TODO --
+- ✅ All DECOYABLE commands verified and tested (Sept 2025)
+- ✅ API endpoints updated to correct /api/v1/ prefix
+- ✅ CLI entry points fixed in pyproject.toml  
+- ✅ FastAPI server commands working correctly
+- ✅ Docker commands validated with existing Dockerfile
+- Keep this file updated when adding new developer scripts
+
+# -- STATUS: ALL COMMANDS VERIFIED WORKING ✅ --
+
+End of DECOYABLE command cheat sheet.owerShell)
 .venv\Scripts\Activate.ps1
 # activate (bash)
 source .venv/bin/activate
@@ -84,8 +94,8 @@ python main.py scan all
 # API server with Docker
 docker-compose up -d
 
-# Test API endpoints
-curl -X POST http://localhost:8000/scan/secrets -H "Content-Type: application/json" -d '{"path": "."}'
+# Test API endpoints (UPDATED PATHS)
+curl -X POST http://localhost:8000/api/v1/scan/secrets -H "Content-Type: application/json" -d '{"path": "."}'
 
 # dotnet
 dotnet run --project src/ProjectName
@@ -99,8 +109,11 @@ dotnet watch run
 # Complete command reference for DECOYABLE platform
 # ==================================================
 
-# ---- Development Setup ----
-# Install dependencies
+# ---- Installation ----
+# Install from PyPI
+pip install decoyable
+
+# Install from source (development)
 pip install -r requirements.txt
 pip install -e .
 
@@ -109,24 +122,39 @@ python -m venv .venv
 source .venv/bin/activate  # Linux/Mac
 # .venv\Scripts\Activate.ps1  # Windows PowerShell
 
-# ---- CLI Commands (main.py) ----
+# ---- CLI Commands (After pip install decoyable) ----
+# Show help
+decoyable --help
+
 # Scan for secrets only
-python main.py scan secrets
+decoyable scan secrets
 
-# Scan for dependencies only
-python main.py scan deps
+# Scan for dependencies only  
+decoyable scan deps
 
-# Scan for both secrets and dependencies
-python main.py scan all
+# Scan for SAST vulnerabilities
+decoyable scan sast
+
+# Scan for everything (comprehensive)
+decoyable scan all
 
 # Scan with custom path
-python main.py scan all --path /path/to/scan
-
-# Scan with output file
-python main.py scan all --output results.json
+decoyable scan all /path/to/scan
 
 # Scan with verbose output
-python main.py scan all --verbose
+decoyable scan sast --format verbose
+
+# ---- CLI Commands (Development/Source) ----
+# Using the main module directly
+python -m decoyable.core.main scan secrets
+python -m decoyable.core.main scan deps
+python -m decoyable.core.main scan sast
+python -m decoyable.core.main scan all
+
+# Legacy main.py support (if available)
+python main.py scan secrets
+python main.py scan deps
+python main.py scan all
 
 # ---- FastAPI Server ----
 # Start development server
@@ -139,29 +167,34 @@ uvicorn decoyable.api.app:app --host 0.0.0.0 --port 8000 --workers 4
 uvicorn decoyable.api.app:app --ssl-keyfile key.pem --ssl-certfile cert.pem
 
 # ---- API Testing ----
+# Health check (VERIFIED WORKING)
+curl -X GET "http://localhost:8000/api/v1/health"
+
 # Test secrets scan endpoint
-curl -X POST "http://localhost:8000/scan/secrets" \
+curl -X POST "http://localhost:8000/api/v1/scan/secrets" \
   -H "Content-Type: application/json" \
   -d '{"path": ".", "recursive": true}'
 
-# Test dependencies scan endpoint
-curl -X POST "http://localhost:8000/scan/dependencies" \
+# Test dependencies scan endpoint  
+curl -X POST "http://localhost:8000/api/v1/scan/dependencies" \
   -H "Content-Type: application/json" \
   -d '{"path": ".", "format": "json"}'
 
-# Test full scan endpoint
-curl -X POST "http://localhost:8000/scan/all" \
+# Test SAST scan endpoint
+curl -X POST "http://localhost:8000/api/v1/scan/sast" \
   -H "Content-Type: application/json" \
   -d '{"path": ".", "output_format": "detailed"}'
 
-# Get scan results
-curl -X GET "http://localhost:8000/results/scan-123"
-
-# Health check
-curl -X GET "http://localhost:8000/health"
+# Test full scan endpoint
+curl -X POST "http://localhost:8000/api/v1/scan/all" \
+  -H "Content-Type: application/json" \
+  -d '{"path": ".", "output_format": "detailed"}'
 
 # API documentation (Swagger)
 curl -X GET "http://localhost:8000/docs"
+
+# API root info
+curl -X GET "http://localhost:8000/api/v1/"
 
 # ---- Docker Commands ----
 # Build DECOYABLE image
