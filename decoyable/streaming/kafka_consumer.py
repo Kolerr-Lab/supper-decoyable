@@ -8,7 +8,7 @@ Handles AI analysis, alert forwarding, and data persistence.
 import asyncio
 import json
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from decoyable.core.config import settings
 
@@ -54,7 +54,7 @@ class AttackEventConsumer:
                 self.topic,
                 bootstrap_servers=settings.kafka_bootstrap_servers,
                 group_id=self.group_id,
-                value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+                value_deserializer=lambda v: self._safe_json_loads(v.decode("utf-8")),
                 key_deserializer=lambda k: k.decode("utf-8") if k else None,
                 auto_offset_reset="latest",  # Start from latest to avoid backlogs
                 enable_auto_commit=True,
@@ -78,6 +78,18 @@ class AttackEventConsumer:
             except Exception as e:
                 logger.error(f"Failed to start Kafka consumer: {e}")
                 self.enabled = False
+
+    def _safe_json_loads(self, data: str) -> dict:
+        """Safely deserialize JSON data with validation."""
+        try:
+            parsed = json.loads(data)
+            if not isinstance(parsed, dict):
+                logger.warning(f"Invalid Kafka message format: expected dict, got {type(parsed)}")
+                return {}
+            return parsed
+        except (json.JSONDecodeError, TypeError) as e:
+            logger.warning(f"Failed to parse Kafka message: {e}")
+            return {}
 
     async def stop(self) -> None:
         """Stop the Kafka consumer."""

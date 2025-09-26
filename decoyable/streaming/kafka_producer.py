@@ -3,7 +3,6 @@ Kafka producer for DECOYABLE attack events.
 Provides optional high-throughput streaming capabilities.
 """
 
-import asyncio
 import json
 import logging
 from typing import Any, Dict, Optional
@@ -53,8 +52,6 @@ class KafkaAttackProducer:
                 value_serializer=lambda v: json.dumps(v).encode("utf-8"),
                 key_serializer=lambda k: str(k).encode("utf-8") if k else None,
                 acks="all",  # Wait for all replicas
-                retries=3,
-                max_in_flight_requests_per_connection=1,  # Ensure ordering
             )
         except Exception as e:
             logger.error(f"Failed to create Kafka producer: {e}")

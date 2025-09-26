@@ -2,17 +2,15 @@
 SAST (Static Application Security Testing) scanner implementation with dependency injection support.
 """
 
-import ast
 import asyncio
 import os
 import re
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Pattern, Set, Union
+from typing import Any, Dict, List, Optional, Union
 
-from decoyable.core.logging import get_logger
-from decoyable.scanners.interfaces import BaseScanner, ScannerConfig, ScannerType, ScanReport, ScanResult
+from decoyable.scanners.interfaces import BaseScanner, ScannerType, ScanReport, ScanResult
 
 
 class VulnerabilitySeverity(Enum):

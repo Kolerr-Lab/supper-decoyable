@@ -7,7 +7,7 @@ Routes requests to available providers based on health, priority, and performanc
 
 import asyncio
 import logging
-import random
+import secrets
 import time
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -63,12 +63,12 @@ class LoadBalancingRouting(RoutingStrategy):
         # Normalize weights
         total_weight = sum(weights)
         if total_weight == 0:
-            return random.choice(healthy_providers)
+            return secrets.choice(healthy_providers)
 
         normalized_weights = [w / total_weight for w in weights]
 
         # Weighted random selection
-        r = random.random()
+        r = secrets.randbelow(1000000) / 1000000.0
         cumulative = 0
         for provider, weight in zip(healthy_providers, normalized_weights):
             cumulative += weight

@@ -6,9 +6,7 @@ Provides active defense capabilities with dependency injection and modular desig
 """
 
 import asyncio
-import json
 import logging
-import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set
 
@@ -256,6 +254,13 @@ class HoneypotService:
         Returns:
             True if blocked successfully
         """
+        # Validate IP address to prevent command injection
+        try:
+            ipaddress.ip_address(ip)
+        except ValueError:
+            logger.error(f"Invalid IP address format: {ip}")
+            return False
+
         if ip in self.blocked_ips:
             return True
 
@@ -267,6 +272,10 @@ class HoneypotService:
 
         # Apply system-level blocking
         try:
+            # Validate IP address to prevent command injection
+            import ipaddress
+            ipaddress.ip_address(ip)  # This will raise ValueError for invalid IPs
+            
             # Use iptables on Linux systems
             proc = await asyncio.create_subprocess_exec(
                 "iptables",

@@ -6,10 +6,9 @@ import asyncio
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Pattern, Tuple, Union
+from typing import Dict, List, Optional, Pattern, Tuple, Union
 
-from decoyable.core.logging import get_logger
-from decoyable.scanners.interfaces import BaseScanner, ScannerConfig, ScannerType, ScanReport, ScanResult
+from decoyable.scanners.interfaces import BaseScanner, ScannerType, ScanReport, ScanResult
 
 
 @dataclass(frozen=True)

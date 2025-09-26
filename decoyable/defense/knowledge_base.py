@@ -129,8 +129,8 @@ class KnowledgeBase:
                     {
                         "id": attack_id,
                         "timestamp": timestamp,
-                        "attack_data": json.loads(attack_data),
-                        "analysis_result": json.loads(analysis_result),
+                        "attack_data": json.loads(attack_data) if attack_data else {},
+                        "analysis_result": json.loads(analysis_result) if analysis_result else {},
                         "feedback": feedback,
                     }
                 )

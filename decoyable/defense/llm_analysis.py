@@ -86,8 +86,12 @@ JSON Response:
         try:
             content = response["choices"][0]["message"]["content"]
             analysis = json.loads(content)
+            # Validate analysis structure
+            if not isinstance(analysis, dict):
+                logger.error("LLM analysis response must be a JSON object")
+                return await analyze_attack_patterns(attack_data)
             return analysis
-        except (KeyError, json.JSONDecodeError) as e:
+        except (KeyError, json.JSONDecodeError, TypeError) as e:
             logger.error(f"Failed to parse LLM response: {e}")
             return await analyze_attack_patterns(attack_data)
 

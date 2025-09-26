@@ -8,7 +8,7 @@ Supports environment variables and .env files with type safety.
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 # Load environment variables from .env file at module level
 try:

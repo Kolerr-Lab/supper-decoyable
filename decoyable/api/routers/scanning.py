@@ -3,13 +3,12 @@ Scanning router for security scanning operations.
 """
 
 import time
-from pathlib import Path
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from decoyable.core.logging import LoggingService, get_logger
+from decoyable.core.logging import get_logger
 from decoyable.core.registry import ServiceRegistry
 from decoyable.scanners.service import ScannerService
 

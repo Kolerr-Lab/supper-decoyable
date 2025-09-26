@@ -1,0 +1,79 @@
+{
+  "timestamp": 1727313325.0,
+  "duration": 1.5,
+  "files_scanned": 13,
+  "issues": [
+    {
+      "id": "sast_1",
+      "file": "decoyable/core/honeypot_service.py",
+      "line": 279,
+      "column": 0,
+      "severity": "critical",
+      "type": "sast",
+      "title": "COMMAND_INJECTION - decoyable/core/honeypot_service.py:279",
+      "description": "Potential command injection vulnerability",
+      "code": "proc = await asyncio.create_subprocess_exec(\n\"iptables\",",
+      "recommendation": "Validate and sanitize user input, use safe APIs",
+      "confidence": 0.8
+    },
+    {
+      "id": "sast_2",
+      "file": "decoyable/defense/honeypot.py",
+      "line": 80,
+      "column": 0,
+      "severity": "critical",
+      "type": "sast",
+      "title": "COMMAND_INJECTION - decoyable/defense/honeypot.py:80",
+      "description": "Potential command injection vulnerability",
+      "code": "proc = await asyncio.create_subprocess_exec(\n\"iptables\",",
+      "recommendation": "Validate and sanitize user input, use safe APIs",
+      "confidence": 0.8
+    },
+    {
+      "id": "sast_3",
+      "file": "decoyable/tasks.py",
+      "line": 39,
+      "column": 0,
+      "severity": "high",
+      "type": "sast",
+      "title": "HARDCODED_SECRET - decoyable/tasks.py:39",
+      "description": "Potential hardcoded secret or credential",
+      "code": "task_default_routing_key=\"security\",",
+      "recommendation": "Use environment variables or secure credential storage",
+      "confidence": 0.9
+    },
+    {
+      "id": "sast_4",
+      "file": "decoyable/core/task_queue_service.py",
+      "line": 96,
+      "column": 0,
+      "severity": "high",
+      "type": "sast",
+      "title": "HARDCODED_SECRET - decoyable/core/task_queue_service.py:96",
+      "description": "Potential hardcoded secret or credential",
+      "code": "task_default_routing_key=\"security\",",
+      "recommendation": "Use environment variables or secure credential storage",
+      "confidence": 0.9
+    },
+    {
+      "id": "sast_5",
+      "file": "decoyable/llm/router.py",
+      "line": 45,
+      "column": 0,
+      "severity": "high",
+      "type": "sast",
+      "title": "INSECURE_RANDOM - decoyable/llm/router.py:45",
+      "description": "Use of insecure random number generation",
+      "code": "random.choice(providers)",
+      "recommendation": "Use secrets module for cryptographically secure random generation",
+      "confidence": 0.9
+    }
+  ],
+  "summary": {
+    "critical": 2,
+    "high": 21,
+    "medium": 0,
+    "low": 0,
+    "info": 0
+  }
+}

@@ -61,11 +61,20 @@ class TaskQueueService:
             return
 
         try:
+            # Validate required environment variables
+            broker_url = os.getenv("CELERY_BROKER_URL")
+            result_backend = os.getenv("CELERY_RESULT_BACKEND")
+            
+            if not broker_url:
+                raise ValueError("CELERY_BROKER_URL environment variable must be set")
+            if not result_backend:
+                raise ValueError("CELERY_RESULT_BACKEND environment variable must be set")
+
             # Initialize Celery app
             self.celery_app = Celery(
                 "decoyable",
-                broker=os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
-                backend=os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0"),
+                broker=broker_url,
+                backend=result_backend,
                 include=["decoyable.core.task_definitions"],
             )
 
@@ -84,7 +93,7 @@ class TaskQueueService:
                 },
                 task_default_queue="security",
                 task_default_exchange="security",
-                task_default_routing_key="security",
+task_default_routing_key = os.getenv("task_default_routing_key", "")
                 # Performance tuning
                 worker_prefetch_multiplier=1,
                 task_acks_late=True,

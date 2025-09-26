@@ -5,13 +5,11 @@ Provides unified caching functionality with Redis/memory fallback and database p
 Integrates with the service registry for dependency injection.
 """
 
-import asyncio
 import hashlib
-import json
 import logging
 import time
 from functools import wraps
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 from decoyable.cache import Cache
 from decoyable.core.registry import ServiceRegistry
@@ -71,7 +69,7 @@ class CacheService:
 
         # Create hash for consistent key length
         key_string = "|".join(key_parts)
-        return hashlib.md5(key_string.encode()).hexdigest()
+        return hashlib.sha256(key_string.encode()).hexdigest()
 
     async def get(self, key: str) -> Any:
         """

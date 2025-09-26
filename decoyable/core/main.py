@@ -32,7 +32,11 @@ def load_config(path: Path | None) -> Dict[str, Any]:
         import json
 
         with path.open("r", encoding="utf-8") as fh:
-            return json.load(fh)
+            data = json.load(fh)
+        # Validate config structure
+        if not isinstance(data, dict):
+            raise ValueError("Configuration file must contain a JSON object")
+        return data
 
     if suffix in {".yml", ".yaml"}:
         try:
@@ -48,13 +52,17 @@ def load_config(path: Path | None) -> Dict[str, Any]:
     import json
 
     with path.open("r", encoding="utf-8") as fh:
-        return json.load(fh)
+        data = json.load(fh)
+    # Validate config structure
+    if not isinstance(data, dict):
+        raise ValueError("Configuration file must contain a JSON object")
+    return data
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the CLI argument parser."""
     p = argparse.ArgumentParser(prog="decoyable", description="DECOYABLE CLI")
-    p.add_argument("--version", action="version", version="decoyable 0.1.0")
+    p.add_argument("--version", action="version", version="decoyable 1.0.3")
     p.add_argument(
         "-v",
         "--verbose",
@@ -81,6 +89,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     scan.add_argument("path", nargs="?", default=".", help="Path to scan (default: current directory)")
     scan.add_argument("--format", choices=["text", "verbose"], default="text", help="Output format")
+
+    # fix command
+    fix = sub.add_parser("fix", help="Apply automated fixes for security issues")
+    fix.add_argument("--scan-results", type=Path, help="Path to JSON file with scan results")
+    fix.add_argument("--auto-approve", action="store_true", help="Apply fixes without confirmation")
+    fix.add_argument("--confirm", action="store_true", help="Confirm before applying fixes")
 
     # test command (lightweight)
     tst = sub.add_parser("test", help="Run self-test checks")
@@ -270,7 +284,7 @@ def main(argv: list[str] | None = None) -> int:
         # Set to INFO level
         pass  # Already configured by logging service
 
-    logger.debug("Starting decoyable version 0.1.0")
+    logger.debug("Starting decoyable version 1.0.3")
 
     # Load additional config if provided
     try:
@@ -284,6 +298,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if cmd in ("run", "scan"):
             return cli_service.run_main_task(config_dict, args)
+        elif cmd == "fix":
+            return cli_service.run_fix_command(args)
         elif cmd == "test":
             return cli_service.run_test_command(args)
         elif cmd == "task":

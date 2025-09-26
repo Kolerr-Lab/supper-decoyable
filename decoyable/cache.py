@@ -59,7 +59,17 @@ class Cache:
             try:
                 data = self.redis_client.get(key)
                 if data:
-                    return json.loads(data.decode("utf-8"))
+                    # Safe JSON deserialization with validation
+                    try:
+                        parsed_data = json.loads(data.decode("utf-8"))
+                        # Basic validation - ensure it's a dict or list
+                        if not isinstance(parsed_data, (dict, list)):
+                            logger.warning(f"Invalid cache data type for key {key}: {type(parsed_data)}")
+                            return None
+                        return parsed_data
+                    except (json.JSONDecodeError, TypeError) as e:
+                        logger.warning(f"Invalid JSON in cache for key {key}: {e}")
+                        return None
             except Exception as e:
                 logger.warning(f"Redis get error: {e}")
                 return None

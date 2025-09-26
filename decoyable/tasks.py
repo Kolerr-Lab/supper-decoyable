@@ -7,10 +7,18 @@ from typing import Any, Dict, List
 from celery import Celery
 
 # Configure Celery
+broker_url = os.getenv("CELERY_BROKER_URL")
+result_backend = os.getenv("CELERY_RESULT_BACKEND")
+
+if not broker_url:
+    raise ValueError("CELERY_BROKER_URL environment variable must be set")
+if not result_backend:
+    raise ValueError("CELERY_RESULT_BACKEND environment variable must be set")
+
 celery_app = Celery(
     "decoyable",
-    broker=os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
-    backend=os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0"),
+    broker=broker_url,
+    backend=result_backend,
     include=["decoyable.tasks"],
 )
 
@@ -28,7 +36,7 @@ celery_app.conf.update(
     },
     task_default_queue="security",
     task_default_exchange="security",
-    task_default_routing_key="security",
+task_default_routing_key = os.getenv("task_default_routing_key", "")
 )
 
 logger = logging.getLogger(__name__)

@@ -6,7 +6,6 @@ and connection pooling for enterprise-grade performance.
 """
 
 import asyncio
-import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional

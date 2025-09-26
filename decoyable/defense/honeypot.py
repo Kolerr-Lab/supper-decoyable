@@ -12,6 +12,7 @@ import os
 import time
 from datetime import datetime
 from typing import Any, Dict, Optional
+import ipaddress
 
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Request, Response
@@ -68,6 +69,13 @@ async def block_ip(ip: str) -> None:
 
     In non-Linux environments iptables is likely unavailable; function will log and return.
     """
+    # Validate IP address to prevent command injection
+    try:
+        ipaddress.ip_address(ip)
+    except ValueError:
+        logger.error(f"Invalid IP address format: {ip}")
+        return
+
     try:
         proc = await asyncio.create_subprocess_exec(
             "iptables",

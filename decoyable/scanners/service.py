@@ -9,9 +9,9 @@ from typing import Any, Dict, List, Optional, Union
 from decoyable.core.cache_service import CacheService
 from decoyable.core.config import Settings
 from decoyable.core.logging import LoggingService, get_logger
-from decoyable.scanners.deps_scanner import DependenciesScanner, DependenciesScannerConfig, DependencyIssue
+from decoyable.scanners.deps_scanner import DependenciesScanner, DependenciesScannerConfig
 from decoyable.scanners.interfaces import ScannerType, ScanReport
-from decoyable.scanners.sast_scanner import SASTScanner, SASTScannerConfig, Vulnerability
+from decoyable.scanners.sast_scanner import SASTScanner, SASTScannerConfig
 from decoyable.scanners.secrets_scanner import SecretFinding, SecretsScanner, SecretsScannerConfig
 
 

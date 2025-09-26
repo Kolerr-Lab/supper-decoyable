@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
 [![PyPI](https://img.shields.io/pypi/v/decoyable.svg)](https://pypi.org/project/decoyable/)
 [![Downloads](https://img.shields.io/pypi/dm/decoyable.svg)](https://pypi.org/project/decoyable/)
-[![Security](https://img.shields.io/badge/security-active--defense-green.svg)](SECURITY.md)
+[![Security](https://img.shields.io/badge/security-zero--real--vulns-brightgreen.svg)](SECURITY.md)
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](docker-compose.yml)
 
 **Stop security vulnerabilities before they reach production.**
@@ -14,6 +14,13 @@
 🛡️ **Active defense with AI-powered honeypots**  
 ⚡ **Sub-30ms scanning with enterprise-grade performance**  
 📦 **Available on PyPI: `pip install decoyable`**
+
+## 🎉 **Version 1.0.3 - Production Ready & Secure!**
+
+✅ **Zero Real Security Vulnerabilities** - Comprehensive security audit completed  
+🛡️ **Enterprise-Grade Security** - IP validation, safe JSON deserialization, SHA-256 crypto  
+⚡ **Self-Healing Code** - Automated vulnerability fixes via CLI extension  
+🔒 **Production Deployment Ready** - All critical issues resolved
 
 👥 **[Join the Community](COMMUNITY.md)** | 📖 **[Documentation](https://github.com/Kolerr-Lab/supper-decoyable/wiki)** | 🐛 **[Report Issues](https://github.com/Kolerr-Lab/supper-decoyable/issues)**
 

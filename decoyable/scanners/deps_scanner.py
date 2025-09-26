@@ -5,14 +5,12 @@ Dependencies scanner implementation with dependency injection support.
 import ast
 import asyncio
 import os
-from collections import defaultdict
 from dataclasses import dataclass
 from importlib import metadata as importlib_metadata
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Union
 
-from decoyable.core.logging import get_logger
-from decoyable.scanners.interfaces import BaseScanner, ScannerConfig, ScannerType, ScanReport, ScanResult
+from decoyable.scanners.interfaces import BaseScanner, ScannerType, ScanReport, ScanResult
 
 
 @dataclass

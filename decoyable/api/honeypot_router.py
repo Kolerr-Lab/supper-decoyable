@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
 from pydantic import BaseModel
 
-from decoyable.core.registry import ServiceRegistry, get_service_registry
+from decoyable.core.registry import get_service_registry
 
 # Create router
 router = APIRouter(prefix="/api/v1/honeypot", tags=["honeypot"])
